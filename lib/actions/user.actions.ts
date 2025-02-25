@@ -9,7 +9,7 @@ import { CountryCode, ProcessorTokenCreateRequest, ProcessorTokenCreateRequestPr
 import { plaidClient } from '@/lib/plaid';
 import { revalidatePath } from "next/cache";
 import { addFundingSource, createDwollaCustomer } from "./dwolla.actions";
-import { createBankAccountProps, exchangePublicTokenProps, getUserInfoProps, signInProps, SignUpParams, User } from "@/types";
+import { createBankAccountProps, exchangePublicTokenProps, getBankByAccountIdProps, getBankProps, getBanksProps, getUserInfoProps, signInProps, SignUpParams, User } from "@/types";
 
 const {
   APPWRITE_DATABASE_ID: DATABASE_ID,
@@ -245,7 +245,7 @@ export const exchangePublicToken = async ({
     console.error("An error occurred while creating exchanging token:", error);
   }
 }
-//
+//getBanksProps
 export const getBanks = async ({ userId }: getBanksProps) => {
   try {
     const { database } = await createAdminClient();
@@ -277,7 +277,7 @@ export const getBank = async ({ documentId }: getBankProps) => {
     console.log(error)
   }
 }
-
+//getBankByAccountIdProps
 export const getBankByAccountId = async ({ accountId }: getBankByAccountIdProps) => {
   try {
     const { database } = await createAdminClient();
