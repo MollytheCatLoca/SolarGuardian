@@ -1,5 +1,6 @@
 "use server";
 
+import { AddFundingSourceParams, CreateFundingSourceOptions, NewDwollaCustomerParams, TransferParams } from "@/types";
 import { Client } from "dwolla-v2";
 
 const getEnvironment = (): "production" | "sandbox" => {
@@ -23,6 +24,7 @@ const dwollaClient = new Client({
   secret: process.env.DWOLLA_SECRET as string,
 });
 
+//CreateFundingSourceOptions
 // Create a Dwolla Funding Source using a Plaid Processor Token
 export const createFundingSource = async (
   options: CreateFundingSourceOptions
@@ -50,7 +52,7 @@ export const createOnDemandAuthorization = async () => {
     console.error("Creating an On Demand Authorization Failed: ", err);
   }
 };
-
+//NewDwollaCustomerParams
 export const createDwollaCustomer = async (
   newCustomer: NewDwollaCustomerParams
 ) => {

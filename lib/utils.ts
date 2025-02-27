@@ -1,4 +1,5 @@
 /* eslint-disable no-prototype-builtins */
+import { AccountTypes } from "@/types";
 import { type ClassValue, clsx } from "clsx";
 import qs from "query-string";
 import { twMerge } from "tailwind-merge";
@@ -91,7 +92,13 @@ export function formatAmount(amount: number): string {
   return formatter.format(amount);
 }
 
-export const parseStringify = (value: any) => JSON.parse(JSON.stringify(value));
+export const parseStringify = (value: any) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  return JSON.parse(JSON.stringify(value));
+};
+
 
 export const removeSpecialCharacters = (value: string) => {
   return value.replace(/[^\w\s]/gi, "");
@@ -117,6 +124,7 @@ export function formUrlQuery({ params, key, value }: UrlQueryParams) {
   );
 }
 
+//AccountTypes
 export function getAccountTypeColors(type: AccountTypes) {
   switch (type) {
     case "depository":

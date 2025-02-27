@@ -16,14 +16,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form"
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import CustomInput from '@/components/CustomInput';
+import CustomInput from './CustomInput';
 import { authFormSchema } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getLoggedInUser, signIn, signUp } from '@/lib/actions/user.actions';
-
+import PlaidLink from './PlaidLink';
 
 const AuthForm = ({ type }: { type: string }) => {
   const router = useRouter();
@@ -35,7 +35,7 @@ const AuthForm = ({ type }: { type: string }) => {
     // 1. Define your form.
     const form = useForm<z.infer<typeof formSchema>>({
       resolver: zodResolver(formSchema),
-      defaultValues: {  
+      defaultValues: {
         email: "",
         password: ''
       },
@@ -73,7 +73,7 @@ const AuthForm = ({ type }: { type: string }) => {
             password: data.password,
           })
 
-          if(response) router.push('/')
+          if(response) router.push('/dashboard')
         }
       } catch (error) {
         console.log(error);
