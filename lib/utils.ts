@@ -1,7 +1,7 @@
 /* eslint-disable no-prototype-builtins */
 import { AccountTypes } from "@/types";
 import { type ClassValue, clsx } from "clsx";
-import qs from "query-string";
+import queryString from "query-string";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
@@ -115,7 +115,7 @@ export function formUrlQuery({ params, key, value }: UrlQueryParams) {
 
   currentUrl[key] = value;
 
-  return qs.stringifyUrl(
+  return queryString.stringifyUrl(
     {
       url: window.location.pathname,
       query: currentUrl,
