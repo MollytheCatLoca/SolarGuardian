@@ -1,31 +1,45 @@
-import MobileNav from "@/components/MobileNav";
-import Sidebar from "@/components/Sidebar";
 import { getLoggedInUser } from "@/lib/actions/user.actions";
+import SolarSidebar from "@/components/solar/SolarSidebar";
+import SolarHeader from "@/components/solar/SolarHeader";
+import SolarMobileNav from "@/components/solar/SolarMobileNav";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import "./bankCSS.css";
 
-export default async function RootLayout({
+export default async function DashboardLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  const loggedIn = await getLoggedInUser() 
-
-  if(!loggedIn) redirect('/sign-in')
-
+}) {
+  // Verificar autenticación
+  const loggedIn = await getLoggedInUser();
+  
+  if (!loggedIn) redirect('/sign-in');
+  
   return (
-    <main className="flex h-screen w-full font-inter light">
-      <Sidebar user={loggedIn} />
-
+    <main className="flex h-screen w-full bg-[#0a0b14] text-white">
+      {/* Sidebar para pantallas medianas y grandes */}
+      <SolarSidebar user={loggedIn} />
+      
+      {/* Contenido principal */}
       <div className="flex size-full flex-col">
-        <div className="root-layout">
-          <Image src="/icons/logo.svg" width={30} height={30} alt="logo" />
+        {/* Header móvil con logo y menú */}
+        <div className="root-layout md:hidden">
+          <Image src="/BISLogo.svg" width={30} height={30} alt="SolarGuardian" />
           <div>
-          <MobileNav user={loggedIn} />
+            <SolarMobileNav user={loggedIn} />
           </div>
         </div>
-        {children}
+        
+        {/* Header para pantallas medianas y grandes */}
+        <div className="hidden md:block">
+          <SolarHeader />
+        </div>
+        
+        {/* Contenido de la página */}
+        <div className="flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
     </main>
   );
