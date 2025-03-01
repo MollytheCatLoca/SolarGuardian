@@ -166,7 +166,6 @@ export default function AlertsPage() {
     <div className="p-6 space-y-6">
       {/* Título y descripción */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Alertas</h1>
         <p className="text-sm text-gray-400">Gestión de alertas e incidencias del parque solar</p>
       </div>
       

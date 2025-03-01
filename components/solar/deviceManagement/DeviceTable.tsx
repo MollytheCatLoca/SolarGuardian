@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { dummyDevices } from '@/lib/solar/dummyData';
 import { Device } from '@/types/solarTypes';
-import { Search, Filter, ArrowUpDown, CheckCircle, AlertCircle, WrenchScrewdriver, XCircle } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, CheckCircle, AlertCircle, Wrench, XCircle } from 'lucide-react';
 
-export default function DeviceList() {
+export default function DeviceTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string[]>([]);
   const [filterType, setFilterType] = useState<string[]>([]);
@@ -15,7 +15,7 @@ export default function DeviceList() {
   // Función para ordenar los dispositivos
   const sortDevices = (a: Device, b: Device) => {
     if (sortBy === 'name') {
-      return sortOrder === 'asc' 
+      return sortOrder === 'asc'
         ? a.name.localeCompare(b.name)
         : b.name.localeCompare(a.name);
     } else if (sortBy === 'status') {
@@ -35,7 +35,7 @@ export default function DeviceList() {
   const filteredDevices = dummyDevices
     .filter(device => {
       const matchesSearch = device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
+                          device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus.length === 0 || filterStatus.includes(device.status);
       const matchesType = filterType.length === 0 || filterType.includes(device.type);
       
@@ -83,7 +83,7 @@ export default function DeviceList() {
       case 'error':
         return <AlertCircle size={16} className="text-red-500" />;
       case 'maintenance':
-        return <WrenchScrewdriver size={16} className="text-blue-500" />;
+        return <Wrench size={16} className="text-blue-500" />;
       default:
         return null;
     }
@@ -147,6 +147,7 @@ export default function DeviceList() {
         {/* Botón de filtro por estado */}
         <div className="relative">
           <button
+            type="button"
             className="flex items-center gap-2 bg-[#1f2937] text-white text-sm rounded-lg px-4 py-2.5 border border-[#374151]"
             onClick={() => {
               const dropdown = document.getElementById('status-dropdown');
@@ -187,6 +188,7 @@ export default function DeviceList() {
         {/* Botón de filtro por tipo */}
         <div className="relative">
           <button
+            type="button"
             className="flex items-center gap-2 bg-[#1f2937] text-white text-sm rounded-lg px-4 py-2.5 border border-[#374151]"
             onClick={() => {
               const dropdown = document.getElementById('type-dropdown');

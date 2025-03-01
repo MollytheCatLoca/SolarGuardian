@@ -22,7 +22,7 @@ export default function MaintenancePage() {
     <div className="p-6 space-y-6">
       {/* Título y descripción */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Mantenimiento</h1>
+      
         <p className="text-sm text-gray-400">Planificación y seguimiento de tareas de mantenimiento preventivo y correctivo</p>
       </div>
       
