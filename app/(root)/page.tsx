@@ -20,7 +20,7 @@ import {
 // Define feature data
 const featureData = [
   {
-    icon: <FaSolarPanel className="h-8 w-8 text-purple-500" />,
+    icon: <FaSolarPanel className="h-8 w-8 text-purple" />,
     title: "Monitoreo en Tiempo Real",
     description: "Visualiza potencia, energía y eficiencia de tu parque solar en tiempo real desde un dashboard intuitivo."
   },
@@ -177,7 +177,7 @@ const Home = () => {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="/energy/dashboard">
+                <a href="/dashboard">
                   <MagicButton 
                     title="INICIAR " 
                     icon={<FaSolarPanel />} 

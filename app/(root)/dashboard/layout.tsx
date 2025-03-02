@@ -25,7 +25,7 @@ export default async function DashboardLayout({
       <div className="flex size-full flex-col">
         {/* Header móvil con logo y menú */}
         <div className="root-layout md:hidden">
-          <Image src="/BISLogo.svg" width={30} height={30} alt="SolarGuardian" />
+          <Image src="/BISLogo.svg" width={40} height={40} alt="SolarGuardian" />
           <div>
             <SolarMobileNav user={loggedIn} />
           </div>
