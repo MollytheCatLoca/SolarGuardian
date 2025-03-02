@@ -40,7 +40,7 @@
         "app/api/assist/route.js",
         "out/types/**/*.ts",
         "app/api/save-analysis"
-    ],
+, "app/(root)/admin/ImageGen"    ],
     "exclude": [
         "node_modules"
     ]
