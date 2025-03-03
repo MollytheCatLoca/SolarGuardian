@@ -1,8 +1,13 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SunDim, Battery, BarChart2, AlertTriangle, CalendarClock, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Importamos los componentes que hemos creado
+import EnergyGenerationChart from './charts/EnergyGenerationChart';
+import ActiveAlerts from './alerts/ActiveAlerts';
+import UpcomingMaintenance from './maintenance/UpcomingMaintenance';
 
 // Datos dummy para mostrar en el dashboard
 const dashboardData = {
@@ -15,83 +20,12 @@ const dashboardData = {
   upcomingTasks: 5
 };
 
-// Componentes que podemos implementar más adelante
-const EnergyGenerationChart = () => (
-  <div className="flex items-center justify-center h-full w-full text-gray-500">
-    Gráfico de generación de energía
-  </div>
-);
-
-const ActiveAlerts = () => (
-  <div className="space-y-3">
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <AlertTriangle size={16} className="mt-0.5 text-red-500" />
-        <div>
-          <p className="text-sm font-medium">Eficiencia por debajo del umbral (92.1% &lt; 95%)</p>
-          <p className="text-xs text-gray-400 mt-1">Inversor 2 - Sector Este</p>
-        </div>
-      </div>
-    </div>
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <AlertTriangle size={16} className="mt-0.5 text-yellow-500" />
-        <div>
-          <p className="text-sm font-medium">Temperatura elevada (68°C &gt; 65°C)</p>
-          <p className="text-xs text-gray-400 mt-1">Panel #128 - Sector Sur</p>
-        </div>
-      </div>
-    </div>
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <AlertTriangle size={16} className="mt-0.5 text-yellow-500" />
-        <div>
-          <p className="text-sm font-medium">Conexión inestable detectada</p>
-          <p className="text-xs text-gray-400 mt-1">Sector Este - Red local</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const UpcomingMaintenance = () => (
-  <div className="space-y-3">
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <CalendarClock size={16} className="mt-0.5 text-blue-400" />
-        <div>
-          <p className="text-sm font-medium">Limpieza de Paneles - Sector Norte</p>
-          <p className="text-xs text-gray-400 mt-1">28/02/2024 - 08:30</p>
-        </div>
-      </div>
-    </div>
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <CalendarClock size={16} className="mt-0.5 text-blue-400" />
-        <div>
-          <p className="text-sm font-medium">Inspección de Inversores</p>
-          <p className="text-xs text-gray-400 mt-1">01/03/2024 - 10:00</p>
-        </div>
-      </div>
-    </div>
-    <div className="bg-[#111928] p-3 rounded-lg">
-      <div className="flex items-start gap-2">
-        <CalendarClock size={16} className="mt-0.5 text-blue-400" />
-        <div>
-          <p className="text-sm font-medium">Actualización de Firmware</p>
-          <p className="text-xs text-gray-400 mt-1">03/03/2024 - 14:00</p>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export default function SolarDashboard() {
   return (
     <div className="space-y-6">
       {/* Título de la sección */}
       <div>
-        <h2 className="text-2xl font-bold text-white">Visión General</h2>
+       
         <p className="text-sm text-gray-400">Monitoreo del Parque Solar en tiempo real</p>
       </div>
       
@@ -167,7 +101,7 @@ export default function SolarDashboard() {
               <span className="text-red-500 text-sm">{dashboardData.activeAlerts}</span>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-80 overflow-auto">
             <ActiveAlerts />
           </CardContent>
         </Card>
@@ -184,7 +118,7 @@ export default function SolarDashboard() {
               <span className="text-blue-400 text-sm">{dashboardData.upcomingTasks}</span>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="max-h-64 overflow-auto">
             <UpcomingMaintenance />
           </CardContent>
         </Card>
@@ -194,7 +128,7 @@ export default function SolarDashboard() {
           <CardHeader>
             <CardTitle>Métricas de Rendimiento</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="h-64">
             <div className="space-y-4">
               {/* Capacidad del sistema */}
               <div>
