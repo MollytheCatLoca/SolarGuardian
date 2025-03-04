@@ -1,9 +1,11 @@
 "use client";
 
-import React from 'react';
-import { SunDim, Battery, BarChart2, AlertTriangle, CalendarClock, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { SunDim, Battery, BarChart2, AlertTriangle, CalendarClock, Zap, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Plant } from '@/types/plantTypes';
+import { useRouter } from 'next/navigation';
 import EnergyGenerationChart from './charts/EnergyGenerationChart';
 import ActiveAlerts from './alerts/ActiveAlerts';
 import UpcomingMaintenance from './maintenance/UpcomingMaintenance';
@@ -38,12 +40,53 @@ export default function SolarDashboard({
   alarmStats,
   maintenanceStats
 }: SolarDashboardProps) {
+  const router = useRouter();
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Efecto para establecer el título del documento
+  useEffect(() => {
+    if (plant && plant.name) {
+      document.title = `Dashboard - ${plant.name}`;
+    }
+  }, [plant]);
+  
+  // Función para refrescar datos
+  const refreshData = () => {
+    setIsRefreshing(true);
+    
+    // En una implementación real, aquí realizarías llamadas a la API
+    // Por ahora, simplemente simulamos un refresco de datos
+    setTimeout(() => {
+      router.refresh(); // Esto provoca que Next.js vuelva a cargar los datos del servidor
+      setLastUpdate(new Date());
+      setIsRefreshing(false);
+    }, 1000);
+  };
+  
   return (
     <div className="space-y-6 p-6">
-      {/* Título de la sección */}
-      <div>
-        <h1 className="text-2xl font-bold mb-2 text-white">{plant.name}</h1>
-        <p className="text-sm text-gray-400">Monitoreo del Parque Solar en tiempo real</p>
+      {/* Título de la sección con botón de refresco */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold mb-2 text-white">{plant.name}</h1>
+          <p className="text-sm text-gray-400">Monitoreo del Parque Solar en tiempo real</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-gray-400">
+            Última actualización: {lastUpdate.toLocaleTimeString()}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshData}
+            disabled={isRefreshing}
+            className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
+          >
+            <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
       
       {/* Indicadores principales */}
@@ -70,13 +113,13 @@ export default function SolarDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{generationMetrics.dailyEnergy} MWh</div>
-            <p className="text-xs text-green-400 mt-1">
+            <p className={`text-xs ${generationMetrics.dailyTrend >= 0 ? 'text-green-400' : 'text-red-400'} mt-1`}>
               {generationMetrics.dailyTrend > 0 ? '+' : ''}{generationMetrics.dailyTrend.toFixed(1)}% vs ayer
             </p>
           </CardContent>
         </Card>
         
-        {/* Eficiencia del sistema */}
+        {/* Generación mensual */}
         <Card className="bg-[#1f2937] border-[#374151] text-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Generación Mensual</CardTitle>
@@ -155,10 +198,17 @@ export default function SolarDashboard({
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs text-gray-400">Capacidad del Sistema</span>
-                  <span className="text-xs font-medium">87%</span>
+                  <span className="text-xs font-medium">
+                    {Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100)}%
+                  </span>
                 </div>
                 <div className="w-full bg-[#111928] rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full" 
+                    style={{ 
+                      width: `${Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100)}%` 
+                    }}
+                  ></div>
                 </div>
               </div>
               

@@ -1,30 +1,236 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { dummyMaintenanceTasks } from '@/lib/solar/dummyData';
+import { Button } from '@/components/ui/button';
 import { MaintenanceTask } from '@/types/solarTypes';
-import { CalendarClock, CheckSquare, ClipboardList, Clock, AlertCircle } from 'lucide-react';
+import { 
+  CalendarClock, 
+  CheckSquare, 
+  ClipboardList, 
+  Clock, 
+  AlertCircle,
+  RefreshCw,
+  X,
+  Play
+} from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useParams, useRouter } from 'next/navigation';
+
+// Importar los servicios de mantenimiento
+import { 
+  getAllMaintenanceTasks, 
+  getMaintenanceTasksByStatus,
+  updateMaintenanceTaskStatus 
+} from '@/lib/services/maintenanceService';
 
 export default function MaintenancePage() {
-  // Filtrar tareas según su estado
-  const pendingTasks = dummyMaintenanceTasks.filter(task => task.status === 'pending');
-  const inProgressTasks = dummyMaintenanceTasks.filter(task => task.status === 'in-progress');
-  const completedTasks = dummyMaintenanceTasks.filter(task => task.status === 'completed');
+  const params = useParams();
+  const router = useRouter();
+  const plantId = params.plantId ? parseInt(params.plantId as string) : null;
   
-  // Estado para la tarea seleccionada
+  // Estados para las tareas
+  const [pendingTasks, setPendingTasks] = useState<MaintenanceTask[]>([]);
+  const [inProgressTasks, setInProgressTasks] = useState<MaintenanceTask[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<MaintenanceTask[]>([]);
   const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
+  
+  // Estado para gestionar carga y errores
+  const [loading, setLoading] = useState({
+    pending: true,
+    inProgress: true,
+    completed: true
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  // Función para cargar las tareas pendientes
+  const loadPendingTasks = useCallback(async () => {
+    if (!plantId) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, pending: true }));
+      const tasks = await getMaintenanceTasksByStatus('pending', plantId);
+      // Ordenar por fecha programada (más próximas primero)
+      const sortedTasks = tasks.sort((a, b) => 
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+      );
+      setPendingTasks(sortedTasks);
+    } catch (err) {
+      console.error("Error cargando tareas pendientes:", err);
+      setError("Error al cargar tareas pendientes. Intente nuevamente.");
+    } finally {
+      setLoading(prev => ({ ...prev, pending: false }));
+    }
+  }, [plantId]);
+  
+  // Función para cargar las tareas en progreso
+  const loadInProgressTasks = useCallback(async () => {
+    if (!plantId) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, inProgress: true }));
+      const tasks = await getMaintenanceTasksByStatus('in-progress', plantId);
+      setInProgressTasks(tasks);
+    } catch (err) {
+      console.error("Error cargando tareas en progreso:", err);
+      setError("Error al cargar tareas en progreso. Intente nuevamente.");
+    } finally {
+      setLoading(prev => ({ ...prev, inProgress: false }));
+    }
+  }, [plantId]);
+  
+  // Función para cargar las tareas completadas
+  const loadCompletedTasks = useCallback(async () => {
+    if (!plantId) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, completed: true }));
+      const tasks = await getMaintenanceTasksByStatus('completed', plantId);
+      // Ordenar por fecha de finalización (más recientes primero)
+      const sortedTasks = tasks.sort((a, b) => 
+        new Date(b.completionDate || b.scheduledDate).getTime() - 
+        new Date(a.completionDate || a.scheduledDate).getTime()
+      );
+      setCompletedTasks(sortedTasks);
+    } catch (err) {
+      console.error("Error cargando tareas completadas:", err);
+      setError("Error al cargar tareas completadas. Intente nuevamente.");
+    } finally {
+      setLoading(prev => ({ ...prev, completed: false }));
+    }
+  }, [plantId]);
+  
+  // Función para cargar todas las tareas
+  const loadAllTasks = useCallback(async () => {
+    setError(null);
+    
+    // Cargar en paralelo para mejorar rendimiento
+    await Promise.all([
+      loadPendingTasks(),
+      loadInProgressTasks(),
+      loadCompletedTasks()
+    ]);
+    
+    setLastUpdate(new Date());
+  }, [loadPendingTasks, loadInProgressTasks, loadCompletedTasks]);
+  
+  // Cargar datos cuando cambia la planta
+  useEffect(() => {
+    if (plantId) {
+      loadAllTasks();
+    } else {
+      // Si no hay plantId, redirigir a página principal o mostrar error
+      console.error("No se encontró un ID de planta válido");
+      setError("No se encontró un ID de planta válido");
+    }
+  }, [plantId, loadAllTasks]);
+  
+  // Función para iniciar una tarea (cambiar estado a "en-progress")
+  const handleStartTask = async (task: MaintenanceTask) => {
+    try {
+      setIsUpdating(true);
+      // En un sistema real, necesitaríamos el ID de usuario actual
+      const mockUserId = 'user-123'; 
+      
+      await updateMaintenanceTaskStatus(task.id, 'in-progress', mockUserId, plantId || undefined);
+      
+      // Actualizar las listas de tareas
+      await loadPendingTasks();
+      await loadInProgressTasks();
+      
+      // Cerrar modal
+      setSelectedTask(null);
+      
+    } catch (err) {
+      console.error("Error al iniciar la tarea:", err);
+      setError("Error al iniciar la tarea. Intente nuevamente.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
+  // Función para completar una tarea (cambiar estado a "completed")
+  const handleCompleteTask = async (task: MaintenanceTask) => {
+    try {
+      setIsUpdating(true);
+      // En un sistema real, necesitaríamos el ID de usuario actual
+      const mockUserId = 'user-123'; 
+      
+      await updateMaintenanceTaskStatus(task.id, 'completed', mockUserId, plantId || undefined);
+      
+      // Actualizar las listas de tareas
+      await loadInProgressTasks();
+      await loadCompletedTasks();
+      
+      // Cerrar modal
+      setSelectedTask(null);
+      
+    } catch (err) {
+      console.error("Error al completar la tarea:", err);
+      setError("Error al completar la tarea. Intente nuevamente.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
+  // Utilidad para obtener texto de prioridad
+  const getPriorityText = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'Alta';
+      case 'medium':
+        return 'Media';
+      case 'low':
+        return 'Baja';
+      default:
+        return priority;
+    }
+  };
   
   return (
     <div className="p-6 space-y-6">
-      {/* Título y descripción */}
-      <div>
-      
-        <p className="text-sm text-gray-400">Planificación y seguimiento de tareas de mantenimiento preventivo y correctivo</p>
+      {/* Título y descripción con botón de actualización */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">Mantenimiento</h1>
+          <p className="text-sm text-gray-400">Planificación y seguimiento de tareas de mantenimiento preventivo y correctivo</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-gray-400">
+            Última actualización: {lastUpdate.toLocaleTimeString()}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadAllTasks}
+            disabled={loading.pending || loading.inProgress || loading.completed}
+            className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
+          >
+            <RefreshCw size={16} className={`mr-2 ${loading.pending || loading.inProgress || loading.completed ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
+      
+      {/* Mostrar mensaje de error si existe */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg flex items-center">
+          <AlertCircle className="mr-2" size={16} />
+          <span>{error}</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-auto text-red-400" 
+            onClick={() => setError(null)}
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      )}
       
       {/* Pestañas para diferentes vistas */}
       <Tabs defaultValue="pending" className="w-full">
@@ -73,12 +279,17 @@ export default function MaintenancePage() {
                   <div>
                     <p className="text-sm text-gray-400">Próxima tarea</p>
                     <h2 className="text-lg font-bold truncate">
-                      {pendingTasks.length > 0 ? pendingTasks[0].title : 'No hay tareas'}
+                      {loading.pending ? (
+                        <span className="text-gray-400">Cargando...</span>
+                      ) : pendingTasks.length > 0 ? (
+                        pendingTasks[0].title
+                      ) : (
+                        'No hay tareas'
+                      )}
                     </h2>
                     <p className="text-xs text-yellow-400 mt-1">
-                      {pendingTasks.length > 0 
-                        ? format(parseISO(pendingTasks[0].scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })
-                        : ''}
+                      {!loading.pending && pendingTasks.length > 0 && 
+                        format(parseISO(pendingTasks[0].scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
@@ -98,19 +309,31 @@ export default function MaintenancePage() {
                       <div className="flex justify-between items-center">
                         <p className="text-xs text-red-400">Alta</p>
                         <p className="text-xs font-medium">
-                          {pendingTasks.filter(t => t.priority === 'high').length}
+                          {loading.pending ? (
+                            <span className="text-gray-400">...</span>
+                          ) : (
+                            pendingTasks.filter(t => t.priority === 'high').length
+                          )}
                         </p>
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-xs text-yellow-400">Media</p>
                         <p className="text-xs font-medium">
-                          {pendingTasks.filter(t => t.priority === 'medium').length}
+                          {loading.pending ? (
+                            <span className="text-gray-400">...</span>
+                          ) : (
+                            pendingTasks.filter(t => t.priority === 'medium').length
+                          )}
                         </p>
                       </div>
                       <div className="flex justify-between items-center">
                         <p className="text-xs text-green-400">Baja</p>
                         <p className="text-xs font-medium">
-                          {pendingTasks.filter(t => t.priority === 'low').length}
+                          {loading.pending ? (
+                            <span className="text-gray-400">...</span>
+                          ) : (
+                            pendingTasks.filter(t => t.priority === 'low').length
+                          )}
                         </p>
                       </div>
                     </div>
@@ -132,45 +355,50 @@ export default function MaintenancePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {pendingTasks.length === 0 ? (
-                  <div className="text-center py-8 text-gray-400">
-                    No hay tareas pendientes programadas
-                  </div>
-                ) : (
-                  pendingTasks.map(task => (
-                    <div 
-                      key={task.id} 
-                      className="bg-[#111928] p-4 rounded-lg border border-[#374151] cursor-pointer hover:border-[#4a4ae2] transition-colors"
-                      onClick={() => setSelectedTask(task)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium">{task.title}</h3>
-                        <div className={`
-                          px-2 py-1 rounded-full text-xs
-                          ${task.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
-                            task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 
-                            'bg-green-500/20 text-green-400'}
-                        `}>
-                          {task.priority === 'high' ? 'Alta' : 
-                           task.priority === 'medium' ? 'Media' : 'Baja'}
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-400 mb-2">{task.description}</p>
-                      <div className="flex justify-between text-xs">
-                        <div className="flex items-center text-blue-400">
-                          <CalendarClock size={14} className="mr-1" />
-                          {format(parseISO(task.scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
-                        </div>
-                        <div className="flex items-center text-purple-400">
-                          <Clock size={14} className="mr-1" />
-                          {Math.floor(task.estimatedDuration / 60)}h {task.estimatedDuration % 60}min
-                        </div>
-                      </div>
+              {loading.pending ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingTasks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      No hay tareas pendientes programadas para esta planta
                     </div>
-                  ))
-                )}
-              </div>
+                  ) : (
+                    pendingTasks.map(task => (
+                      <div 
+                        key={task.id} 
+                        className="bg-[#111928] p-4 rounded-lg border border-[#374151] cursor-pointer hover:border-[#4a4ae2] transition-colors"
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium">{task.title}</h3>
+                          <div className={`
+                            px-2 py-1 rounded-full text-xs
+                            ${task.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
+                              task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 
+                              'bg-green-500/20 text-green-400'}
+                          `}>
+                            {getPriorityText(task.priority)}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-2">{task.description}</p>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center text-blue-400">
+                            <CalendarClock size={14} className="mr-1" />
+                            {format(parseISO(task.scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
+                          </div>
+                          <div className="flex items-center text-purple-400">
+                            <Clock size={14} className="mr-1" />
+                            {Math.floor(task.estimatedDuration / 60)}h {task.estimatedDuration % 60}min
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -184,9 +412,45 @@ export default function MaintenancePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-400">
-                No hay tareas en progreso actualmente
-              </div>
+              {loading.inProgress ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {inProgressTasks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      No hay tareas en progreso actualmente para esta planta
+                    </div>
+                  ) : (
+                    inProgressTasks.map(task => (
+                      <div 
+                        key={task.id} 
+                        className="bg-[#111928] p-4 rounded-lg border border-[#374151] cursor-pointer hover:border-[#4a4ae2] transition-colors"
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium">{task.title}</h3>
+                          <div className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full text-xs">
+                            En Progreso
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-2">{task.description}</p>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center text-blue-400">
+                            <CalendarClock size={14} className="mr-1" />
+                            {format(parseISO(task.scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
+                          </div>
+                          <div className="flex items-center text-green-400">
+                            <Clock size={14} className="mr-1" />
+                            {task.progress ? `${task.progress}% completado` : 'En ejecución'}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -200,9 +464,47 @@ export default function MaintenancePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-gray-400">
-                No hay tareas completadas
-              </div>
+              {loading.completed ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {completedTasks.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      No hay tareas completadas para esta planta
+                    </div>
+                  ) : (
+                    completedTasks.map(task => (
+                      <div 
+                        key={task.id} 
+                        className="bg-[#111928] p-4 rounded-lg border border-[#374151] cursor-pointer hover:border-[#4a4ae2] transition-colors"
+                        onClick={() => setSelectedTask(task)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium">{task.title}</h3>
+                          <div className="bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs">
+                            Completada
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-2">{task.description}</p>
+                        <div className="flex justify-between text-xs">
+                          <div className="flex items-center text-blue-400">
+                            <CalendarClock size={14} className="mr-1" />
+                            {format(parseISO(task.scheduledDate), "dd/MM/yyyy", { locale: es })}
+                          </div>
+                          <div className="flex items-center text-green-400">
+                            <CheckSquare size={14} className="mr-1" />
+                            {task.completionDate ? 
+                              format(parseISO(task.completionDate), "dd/MM/yyyy", { locale: es }) : 
+                              'Completada'}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -216,10 +518,11 @@ export default function MaintenancePage() {
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-xl font-bold text-white">{selectedTask.title}</h2>
                 <button 
-                  className="text-gray-400 hover:text-white"
+                  className="text-gray-400 hover:text-white p-1"
                   onClick={() => setSelectedTask(null)}
+                  disabled={isUpdating}
                 >
-                  ✕
+                  <X size={20} />
                 </button>
               </div>
               
@@ -250,13 +553,20 @@ export default function MaintenancePage() {
                         selectedTask.priority === 'medium' ? 'text-yellow-400' : 
                         'text-green-400'}
                     `}>
-                      {selectedTask.priority === 'high' ? 'Alta' : 
-                       selectedTask.priority === 'medium' ? 'Media' : 'Baja'}
+                      {getPriorityText(selectedTask.priority)}
                     </p>
                   </div>
                   <div>
                     <h3 className="text-sm text-gray-400 mb-1">Estado</h3>
-                    <p className="text-blue-400">Pendiente</p>
+                    <p className={`
+                      ${selectedTask.status === 'pending' ? 'text-blue-400' : 
+                        selectedTask.status === 'in-progress' ? 'text-yellow-400' : 
+                        'text-green-400'}
+                    `}>
+                      {selectedTask.status === 'pending' ? 'Pendiente' : 
+                       selectedTask.status === 'in-progress' ? 'En Progreso' : 
+                       'Completada'}
+                    </p>
                   </div>
                 </div>
                 
@@ -287,17 +597,65 @@ export default function MaintenancePage() {
                   </div>
                 </div>
                 
+                {/* Notas adicionales si existen */}
+                {selectedTask.notes && (
+                  <div>
+                    <h3 className="text-sm text-gray-400 mb-1">Notas adicionales</h3>
+                    <p className="text-white text-sm">{selectedTask.notes}</p>
+                  </div>
+                )}
+                
                 {/* Botones de acción */}
                 <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-[#374151]">
-                  <button 
-                    className="px-4 py-2 rounded-lg border border-[#374151] text-gray-300 hover:bg-[#374151] hover:text-white"
+                  <Button 
+                    variant="outline" 
+                    className="border-[#374151] text-gray-300 hover:bg-[#374151] hover:text-white"
                     onClick={() => setSelectedTask(null)}
+                    disabled={isUpdating}
                   >
                     Cerrar
-                  </button>
-                  <button className="px-4 py-2 rounded-lg bg-[#4a4ae2] text-white">
-                    Iniciar tarea
-                  </button>
+                  </Button>
+                  
+                  {/* Mostrar botón según estado */}
+                  {selectedTask.status === 'pending' && (
+                    <Button 
+                      className="bg-[#4a4ae2] text-white hover:bg-[#3b3be0]"
+                      onClick={() => handleStartTask(selectedTask)}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <>
+                          <RefreshCw size={16} className="mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <Play size={16} className="mr-2" />
+                          Iniciar tarea
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {selectedTask.status === 'in-progress' && (
+                    <Button 
+                      className="bg-green-600 text-white hover:bg-green-700"
+                      onClick={() => handleCompleteTask(selectedTask)}
+                      disabled={isUpdating}
+                    >
+                      {isUpdating ? (
+                        <>
+                          <RefreshCw size={16} className="mr-2 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : (
+                        <>
+                          <CheckSquare size={16} className="mr-2" />
+                          Marcar como completada
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

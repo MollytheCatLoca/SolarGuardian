@@ -82,7 +82,7 @@ export const maintenances: Maintenance[] = [
     scheduledDate: '2024-03-10',
     type: 'Correctivo',
     status: 'En Proceso',
-    description: 'Revisión de inversor inactivo',
+    description: 'Revisión de inversor inactivo Planta4',
     responsibleUserId: 7
   },
   

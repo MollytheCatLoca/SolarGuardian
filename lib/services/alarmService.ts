@@ -1,27 +1,29 @@
 // lib/services/alarmService.ts
-import { dummyAlerts, dummyDevices } from '@/lib/solar/dummyData';
+import { alarms } from '@/data/mock/alarms';
+import { devices } from '@/data/mock/devices';
 import { Alarm } from '@/types/alarmTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
-const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
+const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 700));
 
 /**
  * Obtiene todas las alarmas
  */
 export const getAllAlarms = async (plantId?: number): Promise<Alarm[]> => {
   await simulateLatency();
-  let alerts = [...dummyAlerts];
+  console.log(`[AlarmService] Obteniendo todas las alarmas para plantId: ${plantId || 'todas'}`);
   
-  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
+  let allAlarms = [...alarms];
+  
+  // Si se proporciona un ID de planta, filtrar las alarmas de esa planta
   if (plantId) {
-    // Obtener IDs de dispositivos de la planta
-    const plantDeviceIds = dummyDevices
-      .filter(device => device.plantId === plantId)
-      .map(device => device.id);
-    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
+    allAlarms = allAlarms.filter(alarm => alarm.plantId === plantId);
+    console.log(`[AlarmService] Encontradas ${allAlarms.length} alarmas para la PLANTA ID: ${plantId}`);
+  } else {
+    console.log(`[AlarmService] Devolviendo todas las alarmas (${allAlarms.length})`);
   }
   
-  return alerts;
+  return allAlarms;
 };
 
 /**
@@ -32,18 +34,22 @@ export const getAlarmsByStatus = async (
   plantId?: number
 ): Promise<Alarm[]> => {
   await simulateLatency();
-  let alerts = dummyAlerts.filter(alert => alert.status.toLowerCase() === status.toLowerCase());
+  console.log(`[AlarmService] Obteniendo alarmas con estado ${status} para plantId: ${plantId || 'todas'}`);
   
-  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
-  if (plantId) {
-    // Obtener IDs de dispositivos de la planta
-    const plantDeviceIds = dummyDevices
-      .filter(device => device.plantId === plantId)
-      .map(device => device.id);
-    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
-  }
+  // Normalizar estado para comparación
+  const normalizedStatus = status.toLowerCase();
   
-  return alerts;
+  // Primero obtenemos todas las alarmas para la planta especificada
+  const allPlantAlarms = await getAllAlarms(plantId);
+  
+  // Luego filtramos por estado
+  const filteredAlarms = allPlantAlarms.filter(
+    alarm => alarm.status.toLowerCase() === normalizedStatus
+  );
+  
+  console.log(`[AlarmService] Alarmas con estado ${status} para PLANTA ID ${plantId || 'todas'}: ${filteredAlarms.length}`);
+  
+  return filteredAlarms;
 };
 
 /**
@@ -54,28 +60,59 @@ export const getAlarmsByLevel = async (
   plantId?: number
 ): Promise<Alarm[]> => {
   await simulateLatency();
-  let alerts = dummyAlerts.filter(alert => alert.level.toLowerCase() === level.toLowerCase());
+  console.log(`[AlarmService] Obteniendo alarmas con nivel ${level} para plantId: ${plantId || 'todas'}`);
   
-  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
-  if (plantId) {
-    // Obtener IDs de dispositivos de la planta
-    const plantDeviceIds = dummyDevices
-      .filter(device => device.plantId === plantId)
-      .map(device => device.id);
-    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
-  }
+  // Normalizar nivel para comparación
+  const normalizedLevel = level.toLowerCase();
   
-  return alerts;
+  // Primero obtenemos todas las alarmas para la planta especificada
+  const allPlantAlarms = await getAllAlarms(plantId);
+  
+  // Luego filtramos por nivel
+  const filteredAlarms = allPlantAlarms.filter(
+    alarm => alarm.level.toLowerCase() === normalizedLevel
+  );
+  
+  console.log(`[AlarmService] Alarmas con nivel ${level} para PLANTA ID ${plantId || 'todas'}: ${filteredAlarms.length}`);
+  
+  return filteredAlarms;
 };
 
 /**
  * Obtiene una alarma por su ID
  */
 export const getAlarmById = async (
-  alarmId: number
+  alarmId: number,
+  plantId?: number
 ): Promise<Alarm | undefined> => {
   await simulateLatency();
-  return dummyAlerts.find(alert => alert.id === alarmId);
+  console.log(`[AlarmService] Buscando alarma con ID ${alarmId} para plantId: ${plantId || 'todas'}`);
+  
+  // Si se proporciona un plantId, primero obtenemos las alarmas de esa planta
+  if (plantId) {
+    const plantAlarms = await getAllAlarms(plantId);
+    const alarm = plantAlarms.find(alarm => alarm.id === alarmId);
+    
+    if (alarm) {
+      console.log(`[AlarmService] Encontrada alarma ${alarmId} para PLANTA ID ${plantId}`);
+    } else {
+      console.log(`[AlarmService] No se encontró la alarma ${alarmId} para PLANTA ID ${plantId}`);
+    }
+    
+    return alarm;
+  }
+  
+  // Si no se proporciona un plantId, buscamos en todas las alarmas
+  const allAlarms = await getAllAlarms();
+  const alarm = allAlarms.find(alarm => alarm.id === alarmId);
+  
+  if (alarm) {
+    console.log(`[AlarmService] Encontrada alarma ${alarmId}`);
+  } else {
+    console.log(`[AlarmService] No se encontró la alarma ${alarmId}`);
+  }
+  
+  return alarm;
 };
 
 /**
@@ -83,21 +120,30 @@ export const getAlarmById = async (
  */
 export const acknowledgeAlarm = async (
   alarmId: number,
-  userId: string
+  userId: string,
+  plantId?: number
 ): Promise<Alarm | undefined> => {
   await simulateLatency();
-  const alertIndex = dummyAlerts.findIndex(alert => alert.id === alarmId);
-  if (alertIndex === -1) return undefined;
+  console.log(`[AlarmService] Reconociendo alarma ${alarmId} (Usuario: ${userId})`);
+  
+  // Buscar la alarma primero para ver si existe y si pertenece a la planta correcta
+  const alarm = await getAlarmById(alarmId, plantId);
+  if (!alarm) {
+    console.log(`[AlarmService] ERROR: No se encontró la alarma ${alarmId} para reconocer`);
+    return undefined;
+  }
   
   // En una implementación real, aquí actualizarías la alarma en la base de datos
-  const updatedAlert: Alarm = {
-    ...dummyAlerts[alertIndex],
-    status: 'acknowledged',
+  const updatedAlarm: Alarm = {
+    ...alarm,
+    status: 'Reconocida',
     acknowledgedBy: userId,
     acknowledgedAt: new Date().toISOString()
   };
   
-  return updatedAlert;
+  console.log(`[AlarmService] Alarma ${alarmId} reconocida exitosamente`);
+  
+  return updatedAlarm;
 };
 
 /**
@@ -106,43 +152,52 @@ export const acknowledgeAlarm = async (
 export const resolveAlarm = async (
   alarmId: number,
   userId: string,
-  resolution?: string
+  resolution?: string,
+  plantId?: number
 ): Promise<Alarm | undefined> => {
   await simulateLatency();
-  const alertIndex = dummyAlerts.findIndex(alert => alert.id === alarmId);
-  if (alertIndex === -1) return undefined;
+  console.log(`[AlarmService] Resolviendo alarma ${alarmId} (Usuario: ${userId})`);
+  
+  // Buscar la alarma primero para ver si existe y si pertenece a la planta correcta
+  const alarm = await getAlarmById(alarmId, plantId);
+  if (!alarm) {
+    console.log(`[AlarmService] ERROR: No se encontró la alarma ${alarmId} para resolver`);
+    return undefined;
+  }
   
   // En una implementación real, aquí actualizarías la alarma en la base de datos
-  const updatedAlert: Alarm = {
-    ...dummyAlerts[alertIndex],
-    status: 'resolved',
+  const updatedAlarm: Alarm = {
+    ...alarm,
+    status: 'Resuelta',
     resolvedBy: userId,
-    resolvedAt: new Date().toISOString(),
+    resolutionDate: new Date().toISOString(),
     resolution: resolution
   };
   
-  return updatedAlert;
+  console.log(`[AlarmService] Alarma ${alarmId} resuelta exitosamente`);
+  
+  return updatedAlarm;
 };
 
 /**
  * Obtiene estadísticas de alarmas para un parque solar
- * Esta es la función que faltaba y causaba el error
  */
 export const getAlarmStatistics = async (plantId?: number) => {
   await simulateLatency();
+  console.log(`[AlarmService] Obteniendo estadísticas de alarmas para plantId: ${plantId || 'todas'}`);
   
   // Obtener todas las alarmas filtradas por planta si se proporciona plantId
   const allAlarms = await getAllAlarms(plantId);
   
   // Filtrar alarmas activas
-  const activeAlarms = allAlarms.filter(alarm => alarm.status === 'active');
+  const activeAlarms = allAlarms.filter(alarm => alarm.status === 'Activa');
   
   // Contar alarmas por nivel
   const byLevel: Record<string, number> = {
-    critical: 0,
-    high: 0,
-    medium: 0,
-    low: 0
+    Crítica: 0,
+    Mayor: 0,
+    Menor: 0,
+    Advertencia: 0
   };
   
   allAlarms.forEach(alarm => {
@@ -156,12 +211,20 @@ export const getAlarmStatistics = async (plantId?: number) => {
     .sort((a, b) => new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime())
     .slice(0, 5);
   
-  return {
+  const result = {
     total: allAlarms.length,
     active: activeAlarms.length,
     byLevel,
     recentAlarms
   };
+  
+  console.log(`[AlarmService] Estadísticas para PLANTA ID ${plantId || 'todas'}:`, {
+    total: result.total,
+    active: result.active,
+    byLevel: result.byLevel
+  });
+  
+  return result;
 };
 
 /**
@@ -169,4 +232,64 @@ export const getAlarmStatistics = async (plantId?: number) => {
  */
 export const getAlarmStatsByPlantId = async (plantId: number) => {
   return getAlarmStatistics(plantId);
+};
+
+/**
+ * Obtiene alarmas recientes en los últimos días
+ */
+export const getRecentAlarms = async (
+  days: number = 3,
+  plantId?: number
+): Promise<Alarm[]> => {
+  await simulateLatency();
+  console.log(`[AlarmService] Obteniendo alarmas recientes (${days} días) para plantId: ${plantId || 'todas'}`);
+  
+  // Obtener todas las alarmas
+  const allAlarms = await getAllAlarms(plantId);
+  
+  // Calcular la fecha límite
+  const limitDate = new Date();
+  limitDate.setDate(limitDate.getDate() - days);
+  
+  // Filtrar alarmas más recientes que la fecha límite
+  const recentAlarms = allAlarms.filter(alarm => {
+    const alarmDate = new Date(alarm.alarmDate);
+    return alarmDate >= limitDate;
+  });
+  
+  // Ordenar por fecha (más recientes primero)
+  recentAlarms.sort((a, b) => 
+    new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
+  );
+  
+  console.log(`[AlarmService] Alarmas recientes (${days} días) para PLANTA ID ${plantId || 'todas'}: ${recentAlarms.length}`);
+  
+  return recentAlarms;
+};
+
+/**
+ * Obtiene el recuento de alarmas por dispositivo
+ */
+export const getAlarmCountByDevice = async (plantId?: number): Promise<Record<number, number>> => {
+  await simulateLatency();
+  console.log(`[AlarmService] Obteniendo recuento de alarmas por dispositivo para plantId: ${plantId || 'todas'}`);
+  
+  // Obtener todas las alarmas
+  const allAlarms = await getAllAlarms(plantId);
+  
+  // Contabilizar alarmas por dispositivo
+  const countByDevice: Record<number, number> = {};
+  
+  allAlarms.forEach(alarm => {
+    const deviceId = alarm.deviceId;
+    if (countByDevice[deviceId]) {
+      countByDevice[deviceId]++;
+    } else {
+      countByDevice[deviceId] = 1;
+    }
+  });
+  
+  console.log(`[AlarmService] Recuento de alarmas por dispositivo para PLANTA ID ${plantId || 'todas'} completado`);
+  
+  return countByDevice;
 };

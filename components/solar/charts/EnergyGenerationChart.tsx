@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   AreaChart, 
   Area, 
@@ -11,33 +11,87 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-import { dummyEnergyHistory } from '@/lib/solar/dummyData';
+import { AlertCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getEnergyHistoryByPlantId } from '@/lib/services/measurementService';
 
 type TimeFrame = 'hourly' | 'daily' | 'monthly';
 
-export default function EnergyGenerationChart() {
+interface EnergyGenerationChartProps {
+  plantId: number;
+}
+
+export default function EnergyGenerationChart({ plantId }: EnergyGenerationChartProps) {
   const [timeFrame, setTimeFrame] = useState<TimeFrame>('hourly');
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  let data;
-  let dataKey: string;
-  let label: string;
+  // Valores para las etiquetas según el tipo de datos
+  const getChartSettings = (type: TimeFrame) => {
+    switch(type) {
+      case 'hourly':
+        return { dataKey: 'time', valueKey: 'power', label: 'Potencia (MW)' };
+      case 'daily':
+        return { dataKey: 'date', valueKey: 'energy', label: 'Energía (MWh)' };
+      case 'monthly':
+        return { dataKey: 'month', valueKey: 'energy', label: 'Energía (MWh)' };
+    }
+  };
   
-  switch(timeFrame) {
-    case 'hourly':
-      data = dummyEnergyHistory.hourly;
-      dataKey = 'time';
-      label = 'Potencia (MW)';
-      break;
-    case 'daily':
-      data = dummyEnergyHistory.daily;
-      dataKey = 'date';
-      label = 'Energía (MWh)';
-      break;
-    case 'monthly':
-      data = dummyEnergyHistory.monthly;
-      dataKey = 'month';
-      label = 'Energía (MWh)';
-      break;
+  // Función para cargar datos con useCallback
+  const loadChartData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      console.log(`Cargando datos de generación para plantId: ${plantId}, timeFrame: ${timeFrame}`);
+      const data = await getEnergyHistoryByPlantId(plantId, timeFrame);
+      setChartData(data);
+    } catch (error) {
+      console.error('Error cargando datos del gráfico:', error);
+      setError('No se pudieron cargar los datos de generación. Intente nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [plantId, timeFrame]);
+  
+  // Cargar datos cuando cambia la planta o el período de tiempo
+  useEffect(() => {
+    loadChartData();
+  }, [loadChartData]);
+  
+  // Obtener configuración actual del gráfico
+  const { dataKey, valueKey, label } = getChartSettings(timeFrame);
+  
+  // Renderizar estado de carga
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex justify-center items-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+  
+  // Renderizar estado de error
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col justify-center items-center">
+        <div className="bg-red-500/20 text-red-400 p-2 rounded-full mb-2">
+          <AlertCircle size={24} />
+        </div>
+        <p className="text-sm text-gray-400 mb-4">{error}</p>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={loadChartData}
+          className="bg-[#1f2937] border-[#374151] text-white"
+        >
+          <RefreshCw size={16} className="mr-2" />
+          Reintentar
+        </Button>
+      </div>
+    );
   }
   
   return (
@@ -78,7 +132,7 @@ export default function EnergyGenerationChart() {
       <div className="w-full h-64">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={data}
+            data={chartData}
             margin={{
               top: 5,
               right: 30,
@@ -127,20 +181,22 @@ export default function EnergyGenerationChart() {
             {timeFrame === 'hourly' ? (
               <Area 
                 type="monotone" 
-                dataKey="power" 
+                dataKey={valueKey} 
                 name="Potencia Generada" 
                 stroke="#4a4ae2" 
                 fillOpacity={1} 
                 fill="url(#colorPower)" 
+                isAnimationActive={false} // Desactivar animación para mejora de rendimiento
               />
             ) : (
               <Area 
                 type="monotone" 
-                dataKey="energy" 
+                dataKey={valueKey} 
                 name="Energía Generada" 
                 stroke="#8a3ab4" 
                 fillOpacity={1} 
                 fill="url(#colorEnergy)" 
+                isAnimationActive={false} // Desactivar animación para mejora de rendimiento
               />
             )}
           </AreaChart>
