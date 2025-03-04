@@ -1,6 +1,7 @@
 // lib/services/measurementService.ts
 import { dummyEnergyGeneration, dummyEnergyHistory, dummyDevices } from '@/lib/solar/dummyData';
 import { plants } from '@/data/mock/plants';
+import { measurements } from '@/data/mock/measurements';  // Importamos los datos de mediciones
 import { SmartLoggerMeasurement } from '@/types/measurementTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
@@ -138,4 +139,52 @@ export const getLatestMeasurementsByPlantId = async (plantId: number) => {
   });
   
   return deviceMeasurements;
+};
+
+/**
+ * Obtiene mediciones del SmartLogger para un parque solar específico utilizando datos reales
+ * Esta función trabaja con los datos de measurements.ts en lugar de generarlos
+ */
+export const getSmartLoggerMeasurementsForPlant = async (plantId: number): Promise<SmartLoggerMeasurement | null> => {
+  await simulateLatency();
+  
+  // Mapeamos el plantId a uno de los deviceId correspondientes en los datos de mediciones
+  // En este caso específico, tenemos que hacer una relación de plantId a deviceId
+  let deviceId: number;
+  
+  switch (plantId) {
+    case 1:  // Parque San Juan (usando tu ejemplo)
+      deviceId = 1;
+      break;
+    case 2:  // Si plantId 2 debe estar asociado con algún otro dispositivo
+      deviceId = 5;  // Por ejemplo, asignamos el SmartLogger ID 5 (La Rioja)
+      break;
+    case 3:
+      deviceId = 8;  // Mendoza Norte
+      break;
+    case 4:
+      deviceId = 11; // Mendoza Sur
+      break;
+    case 5:
+      deviceId = 13; // Neuquén
+      break;
+    default:
+      // Para otros IDs, podemos asignar uno por defecto o retornar null
+      return null;
+  }
+  
+  // Buscamos la medición más reciente para el deviceId correspondiente
+  const deviceMeasurements = measurements
+    .filter(m => m.deviceId === deviceId)
+    .sort((a, b) => {
+      return new Date(b.measurementDate).getTime() - new Date(a.measurementDate).getTime();
+    });
+  
+  // Si encontramos mediciones, devolvemos la más reciente
+  if (deviceMeasurements.length > 0) {
+    return deviceMeasurements[0];
+  }
+  
+  // Si no encontramos mediciones para este dispositivo, retornamos null
+  return null;
 };

@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { dummySolarPark, dummyDevices, dummyEnergyGeneration, dummyEnergyHistory } from '@/lib/solar/dummyData';
 import { Battery, Zap, SunDim, Activity, Server } from 'lucide-react';
 import DeviceTable from '@/components/solar/deviceManagement/DeviceTable';
+import AdditionalMonitor from '@/components/solar/deviceManagement/AdditionalMonitor';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function MonitorPage() {
+export default function MonitorPage({ params }: { params: { plantId: string } }) {
+  const plantId = parseInt(params.plantId);
+  
   // Conteo de dispositivos por estado
   const deviceStatusCounts = {
     total: dummyDevices.length,
@@ -158,6 +161,9 @@ export default function MonitorPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Componente de Mediciones Adicionales */}
+          <AdditionalMonitor plantId={plantId} />
         </TabsContent>
         
         <TabsContent value="devices" className="space-y-6">
@@ -253,6 +259,9 @@ export default function MonitorPage() {
               <DeviceTable />
             </CardContent>
           </Card>
+          
+          {/* Componente de Mediciones Adicionales */}
+          <AdditionalMonitor plantId={plantId} />
         </TabsContent>
         
         <TabsContent value="generation" className="space-y-6">
@@ -288,6 +297,9 @@ export default function MonitorPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Componente de Mediciones Adicionales */}
+          <AdditionalMonitor plantId={plantId} />
         </TabsContent>
       </Tabs>
     </div>
