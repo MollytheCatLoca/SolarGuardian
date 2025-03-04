@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,55 +17,78 @@ import {
   LogOut
 } from 'lucide-react';
 
-const sidebarItems = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    icon: <LayoutDashboard size={20} />,
-    path: '/dashboard'
-  },
-  {
-    id: 'monitor',
-    label: 'Monitoreo',
-    icon: <SunMedium size={20} />,
-    path: '/dashboard/monitor'
-  },
-  {
-    id: 'maintenance',
-    label: 'Mantenimiento',
-    icon: <Wrench size={20} />,
-    path: '/dashboard/maintenance'
-  },
-  {
-    id: 'calendar',
-    label: 'Calendario',
-    icon: <Calendar size={20} />,
-    path: '/dashboard/calendar'
-  },
-  {
-    id: 'alerts',
-    label: 'Alertas',
-    icon: <Bell size={20} />,
-    path: '/dashboard/alerts'
-  },
-  {
-    id: 'reports',
-    label: 'Reportes',
-    icon: <BarChart3 size={20} />,
-    path: '/dashboard/reports'
-  },
-  {
-    id: 'settings',
-    label: 'Configuración',
-    icon: <Settings size={20} />,
-    path: '/dashboard/settings'
-  }
-];
+// Función para crear elementos de la barra lateral con rutas dinámicas
+const createSidebarItems = (plantId) => {
+  // Determinar la ruta base según si tenemos un plantId o no
+  const basePath = plantId ? `/dashboard/${plantId}` : '/dashboard';
+  
+  return [
+    {
+      id: 'dashboard',
+      label: 'Dashboard',
+      icon: <LayoutDashboard size={20} />,
+      path: basePath
+    },
+    {
+      id: 'monitor',
+      label: 'Monitoreo',
+      icon: <SunMedium size={20} />,
+      path: `${basePath}/monitor`
+    },
+    {
+      id: 'maintenance',
+      label: 'Mantenimiento',
+      icon: <Wrench size={20} />,
+      path: `${basePath}/maintenance`
+    },
+    {
+      id: 'calendar',
+      label: 'Calendario',
+      icon: <Calendar size={20} />,
+      path: `${basePath}/calendar`
+    },
+    {
+      id: 'alerts',
+      label: 'Alertas',
+      icon: <Bell size={20} />,
+      path: `${basePath}/alerts`
+    },
+    {
+      id: 'reports',
+      label: 'Reportes',
+      icon: <BarChart3 size={20} />,
+      path: `${basePath}/reports`
+    },
+    {
+      id: 'settings',
+      label: 'Configuración',
+      icon: <Settings size={20} />,
+      path: `${basePath}/settings`
+    }
+  ];
+};
 
-export default function SolarSidebar({ user }: { user: any }) {
+// Componente principal
+export default function SolarSidebar({ user }) {
   const pathname = usePathname();
   const router = useRouter();
-
+  const [plantId, setPlantId] = useState(null);
+  
+  // Extraer el ID de la planta de la URL
+  useEffect(() => {
+    // Buscamos un patrón en la URL como /dashboard/1/...
+    const match = pathname.match(/\/dashboard\/(\d+)/);
+    if (match && match[1]) {
+      setPlantId(match[1]);
+    } else {
+      setPlantId(null);
+    }
+  }, [pathname]);
+  
+  // Obtener los elementos del sidebar con las rutas adecuadas
+  const sidebarItems = createSidebarItems(plantId);
+  
+  // Función para cerrar sesión
   const handleLogOut = async () => {
     const loggedOut = await logoutAccount();
     if(loggedOut) router.push('/sign-in');

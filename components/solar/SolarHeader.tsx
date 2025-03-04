@@ -1,10 +1,12 @@
+// components/solar/SolarHeader.tsx
 "use client"
 
 import React from 'react';
 import { Bell, Search, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import PlantSelector from './PlantSelector';
 
-export default function SolarHeader() {
+export default function SolarHeader({ clientId }: { clientId: number }) {
   const { theme, setTheme } = useTheme();
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -14,6 +16,9 @@ export default function SolarHeader() {
     <header className="h-16 px-6 flex items-center justify-between bg-[#111928] border-b border-[#1f2937]">
       {/* Título de la página */}
       <h1 className="text-xl font-bold text-white">Dashboard</h1>
+      
+      {/* Selector de planta */}
+      <PlantSelector clientId={clientId} />
       
       {/* Búsqueda */}
       <div className="flex-1 max-w-md mx-8">

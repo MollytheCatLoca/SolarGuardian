@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
+import Footer from '@/components/OldComp/Footer';
 import { Spotlight } from "@/components/ui/Spotlight";
 import { TextGenerateEffect } from "@/components/ui/Text-Generate-Effect";
 import { FaLocationArrow } from "react-icons/fa6";

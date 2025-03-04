@@ -1,15 +1,31 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAlarmsByStatus } from '@/lib/services/alarmService';
+import { Alarm } from '@/types/alarmTypes';
 import { AlertTriangle, ChevronRight } from 'lucide-react';
-import { dummyAlerts } from '@/lib/solar/dummyData';
-import { Alert } from '@/types/solarTypes';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export default function ActiveAlerts() {
-  // Filtramos solo las alertas activas
-  const activeAlerts = dummyAlerts.filter(alert => alert.status === 'active');
+export default function ActiveAlerts({ plantId }: { plantId: number }) {
+  const [activeAlerts, setActiveAlerts] = useState<Alarm[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const loadAlerts = async () => {
+      try {
+        setIsLoading(true);
+        const alerts = await getAlarmsByStatus('Activa', plantId);
+        setActiveAlerts(alerts);
+      } catch (error) {
+        console.error('Error loading alerts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadAlerts();
+  }, [plantId]);
   
   // Función para formatear el tiempo transcurrido
   const formatTimeAgo = (timestamp: string) => {
@@ -23,17 +39,29 @@ export default function ActiveAlerts() {
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'critical':
+      case 'Crítica':
         return 'border-red-600 text-red-500';
       case 'high':
+      case 'Mayor':
         return 'border-red-500 text-red-500';
       case 'medium':
+      case 'Menor':
         return 'border-yellow-500 text-yellow-500';
       case 'low':
+      case 'Advertencia':
         return 'border-orange-500 text-orange-500';
       default:
         return 'border-gray-500 text-gray-500';
     }
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
   
   if (activeAlerts.length === 0) {
     return (
@@ -49,35 +77,26 @@ export default function ActiveAlerts() {
   return (
     <div className="space-y-3 max-h-[300px] overflow-auto pr-1">
       {activeAlerts.map((alert) => (
-        <AlertCard key={alert.id} alert={alert} formatTimeAgo={formatTimeAgo} getSeverityColor={getSeverityColor} />
-      ))}
-    </div>
-  );
-}
-
-interface AlertCardProps {
-  alert: Alert;
-  formatTimeAgo: (timestamp: string) => string;
-  getSeverityColor: (severity: string) => string;
-}
-
-function AlertCard({ alert, formatTimeAgo, getSeverityColor }: AlertCardProps) {
-  return (
-    <div className={`bg-[#111928] p-3 rounded-md border-l-4 ${getSeverityColor(alert.severity)}`}>
-      <div className="flex justify-between items-start mb-1">
-        <div className="flex-1">
-          <h4 className="font-medium text-sm">{alert.deviceName} - {alert.message}</h4>
+        <div 
+          key={alert.id} 
+          className={`bg-[#111928] p-3 rounded-md border-l-4 ${getSeverityColor(alert.level)}`}
+        >
+          <div className="flex justify-between items-start mb-1">
+            <div className="flex-1">
+              <h4 className="font-medium text-sm">{alert.description}</h4>
+            </div>
+            <span className={`text-xs px-2 py-0.5 rounded-full bg-opacity-20 ${getSeverityColor(alert.level).replace('border-', 'bg-').replace('text-', 'text-')}`}>
+              {alert.level}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-gray-400">Detectado {formatTimeAgo(alert.alarmDate)}</p>
+            <button className="text-xs text-[#4a4ae2] flex items-center">
+              Detalles <ChevronRight size={12} />
+            </button>
+          </div>
         </div>
-        <span className={`text-xs px-2 py-0.5 rounded-full bg-opacity-20 ${getSeverityColor(alert.severity).replace('border-', 'bg-').replace('text-', 'text-')}`}>
-          {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
-        </span>
-      </div>
-      <div className="flex justify-between items-center">
-        <p className="text-xs text-gray-400">Detectado {formatTimeAgo(alert.timestamp)}</p>
-        <button className="text-xs text-[#4a4ae2] flex items-center">
-          Detalles <ChevronRight size={12} />
-        </button>
-      </div>
+      ))}
     </div>
   );
 }

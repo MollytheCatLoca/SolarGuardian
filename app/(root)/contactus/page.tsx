@@ -2,10 +2,10 @@
 import React from 'react';
 import { navItems } from "@/data";
 import { FloatingNav } from "@/components/ui/FloatingNav";
-import Hero from '@/components/Hero-Contact';
-import Footer from "@/components/Footer";
-import { ContactForm } from "@/components/contact-form";
-import MapaArgentina from "@/components/MapaArgentina";
+import Hero from '@/components/OldComp/Hero-Contact';
+import Footer from "@/components/OldComp/Footer";
+import { ContactForm } from "@/components/OldComp/contact-form";
+import MapaArgentina from "@/components/OldComp/MapaArgentina";
 import Link from 'next/link';
 export default function ContactPage() {
     return (

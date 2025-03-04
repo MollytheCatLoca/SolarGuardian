@@ -3,46 +3,29 @@
 import React from 'react';
 import { SunDim, Battery, BarChart2, AlertTriangle, CalendarClock, Zap } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plant } from '@/types/plantTypes';
+
+// Importamos los componentes que hemos creado
 import EnergyGenerationChart from './charts/EnergyGenerationChart';
 import ActiveAlerts from './alerts/ActiveAlerts';
 import UpcomingMaintenance from './maintenance/UpcomingMaintenance';
 
-interface SolarDashboardProps {
-  plant: Plant;
-  generationMetrics: {
-    currentPower: number;
-    dailyEnergy: number;
-    monthlyEnergy: number;
-    totalEnergy: number;
-    dailyTrend: number;
-  };
-  alarmStats: {
-    total: number;
-    active: number;
-    byLevel: Record<string, number>;
-    recentAlarms: any[];
-  };
-  maintenanceStats: {
-    pending: number;
-    inProgress: number;
-    completed: number;
-    total: number;
-    upcomingTasks: any[];
-  };
-}
+// Datos dummy para mostrar en el dashboard
+const dashboardData = {
+  currentPower: 2.4, // MW
+  dailyGeneration: 16.8, // MWh
+  monthlyGeneration: 426.2, // MWh
+  batteryLevel: 76, // %
+  efficiency: 94.2, // %
+  activeAlerts: 3,
+  upcomingTasks: 5
+};
 
-export default function SolarDashboard({
-  plant,
-  generationMetrics,
-  alarmStats,
-  maintenanceStats
-}: SolarDashboardProps) {
+export default function SolarDashboard() {
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Título de la sección */}
       <div>
-        <h1 className="text-2xl font-bold mb-2 text-white">{plant.name}</h1>
+       
         <p className="text-sm text-gray-400">Monitoreo del Parque Solar en tiempo real</p>
       </div>
       
@@ -55,10 +38,8 @@ export default function SolarDashboard({
             <Zap size={18} className="text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{generationMetrics.currentPower.toFixed(1)} MW</div>
-            <p className="text-xs text-gray-400 mt-1">
-              Funcionando a {Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100)}% de capacidad
-            </p>
+            <div className="text-2xl font-bold">{dashboardData.currentPower} MW</div>
+            <p className="text-xs text-gray-400 mt-1">Funcionando a 87% de capacidad</p>
           </CardContent>
         </Card>
         
@@ -69,22 +50,20 @@ export default function SolarDashboard({
             <SunDim size={18} className="text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{generationMetrics.dailyEnergy} MWh</div>
-            <p className="text-xs text-green-400 mt-1">
-              {generationMetrics.dailyTrend > 0 ? '+' : ''}{generationMetrics.dailyTrend.toFixed(1)}% vs ayer
-            </p>
+            <div className="text-2xl font-bold">{dashboardData.dailyGeneration} MWh</div>
+            <p className="text-xs text-gray-400 mt-1">4.2% más que ayer</p>
           </CardContent>
         </Card>
         
         {/* Eficiencia del sistema */}
         <Card className="bg-[#1f2937] border-[#374151] text-white">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Generación Mensual</CardTitle>
+            <CardTitle className="text-sm font-medium">Eficiencia</CardTitle>
             <BarChart2 size={18} className="text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{generationMetrics.monthlyEnergy} MWh</div>
-            <p className="text-xs text-gray-400 mt-1">Este mes</p>
+            <div className="text-2xl font-bold">{dashboardData.efficiency}%</div>
+            <p className="text-xs text-gray-400 mt-1">1.2% sobre el promedio histórico</p>
           </CardContent>
         </Card>
         
@@ -95,7 +74,7 @@ export default function SolarDashboard({
             <Battery size={18} className="text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">76%</div>
+            <div className="text-2xl font-bold">{dashboardData.batteryLevel}%</div>
             <p className="text-xs text-gray-400 mt-1">Capacidad restante</p>
           </CardContent>
         </Card>
@@ -109,7 +88,7 @@ export default function SolarDashboard({
             <CardTitle>Generación de Energía</CardTitle>
           </CardHeader>
           <CardContent className="h-80">
-            <EnergyGenerationChart plantId={plant.id} />
+            <EnergyGenerationChart />
           </CardContent>
         </Card>
         
@@ -119,11 +98,11 @@ export default function SolarDashboard({
             <CardTitle>Alertas Activas</CardTitle>
             <div className="flex items-center">
               <AlertTriangle size={16} className="text-red-500 mr-1" />
-              <span className="text-red-500 text-sm">{alarmStats.active}</span>
+              <span className="text-red-500 text-sm">{dashboardData.activeAlerts}</span>
             </div>
           </CardHeader>
           <CardContent className="max-h-80 overflow-auto">
-            <ActiveAlerts plantId={plant.id} />
+            <ActiveAlerts />
           </CardContent>
         </Card>
       </div>
@@ -136,11 +115,11 @@ export default function SolarDashboard({
             <CardTitle>Mantenimiento Programado</CardTitle>
             <div className="flex items-center">
               <CalendarClock size={16} className="text-blue-400 mr-1" />
-              <span className="text-blue-400 text-sm">{maintenanceStats.pending}</span>
+              <span className="text-blue-400 text-sm">{dashboardData.upcomingTasks}</span>
             </div>
           </CardHeader>
           <CardContent className="max-h-64 overflow-auto">
-            <UpcomingMaintenance plantId={plant.id} />
+            <UpcomingMaintenance />
           </CardContent>
         </Card>
         

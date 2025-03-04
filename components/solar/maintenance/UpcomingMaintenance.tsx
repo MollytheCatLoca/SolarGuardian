@@ -1,17 +1,38 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { MaintenanceTask } from '@/types/maintenanceTypes';
 import { CalendarClock, ChevronRight } from 'lucide-react';
-import { dummyMaintenanceTasks } from '@/lib/solar/dummyData';
-import { MaintenanceTask } from '@/types/solarTypes';
-import { formatDistanceToNow, format, isToday, isTomorrow, addDays } from 'date-fns';
+import { format, isToday, isTomorrow, formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-export default function UpcomingMaintenance() {
-  // Filtramos tareas pendientes y las ordenamos por fecha
-  const upcomingTasks = dummyMaintenanceTasks
-    .filter(task => task.status === 'pending')
-    .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime());
+// Import the maintenance service
+import { getMaintenanceTasksByStatus } from '@/lib/services/maintenanceService';
+
+export default function UpcomingMaintenance({ plantId }: { plantId: number }) {
+  const [upcomingTasks, setUpcomingTasks] = useState<MaintenanceTask[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        setIsLoading(true);
+        // Fetch pending maintenance tasks for the specified plant
+        const tasks = await getMaintenanceTasksByStatus('Pendiente', plantId);
+        // Sort them by scheduled date
+        const sortedTasks = tasks.sort((a, b) => 
+          new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+        );
+        setUpcomingTasks(sortedTasks);
+      } catch (error) {
+        console.error('Error loading maintenance tasks:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadTasks();
+  }, [plantId]);
   
   // Función para formatear la fecha
   const formatScheduledDate = (dateString: string) => {
@@ -45,10 +66,13 @@ export default function UpcomingMaintenance() {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
+      case 'Alta':
         return 'bg-purple-500';
       case 'medium':
+      case 'Media':
         return 'bg-blue-500';
       case 'low':
+      case 'Baja':
         return 'bg-green-500';
       default:
         return 'bg-gray-500';
@@ -69,6 +93,14 @@ export default function UpcomingMaintenance() {
     }
   };
   
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+  
   if (upcomingTasks.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-8">
@@ -83,48 +115,24 @@ export default function UpcomingMaintenance() {
   return (
     <div className="space-y-3 max-h-[300px] overflow-auto pr-1">
       {upcomingTasks.map((task) => (
-        <MaintenanceTaskCard
-          key={task.id}
-          task={task}
-          formatScheduledDate={formatScheduledDate}
-          getRelativeTime={getRelativeTime}
-          getPriorityColor={getPriorityColor}
-          getTimeBadgeStyles={getTimeBadgeStyles}
-        />
-      ))}
-    </div>
-  );
-}
-
-interface MaintenanceTaskCardProps {
-  task: MaintenanceTask;
-  formatScheduledDate: (dateString: string) => string;
-  getRelativeTime: (dateString: string) => string;
-  getPriorityColor: (priority: string) => string;
-  getTimeBadgeStyles: (dateString: string) => string;
-}
-
-function MaintenanceTaskCard({
-  task,
-  formatScheduledDate,
-  getRelativeTime,
-  getPriorityColor,
-  getTimeBadgeStyles
-}: MaintenanceTaskCardProps) {
-  return (
-    <div className="bg-[#111928] p-3 rounded-md flex items-center">
-      <div className={`w-2 h-10 ${getPriorityColor(task.priority)} rounded-full mr-3`}></div>
-      <div className="flex-1">
-        <div className="flex justify-between">
-          <h4 className="font-medium text-sm">{task.title}</h4>
-          <span className={`text-xs px-2 py-1 rounded-full ${getTimeBadgeStyles(task.scheduledDate)}`}>
-            {getRelativeTime(task.scheduledDate)}
-          </span>
+        <div 
+          key={task.id} 
+          className="bg-[#111928] p-3 rounded-md flex items-center"
+        >
+          <div className={`w-2 h-10 ${getPriorityColor(task.priority)} rounded-full mr-3`}></div>
+          <div className="flex-1">
+            <div className="flex justify-between">
+              <h4 className="font-medium text-sm">{task.description}</h4>
+              <span className={`text-xs px-2 py-1 rounded-full ${getTimeBadgeStyles(task.scheduledDate)}`}>
+                {getRelativeTime(task.scheduledDate)}
+              </span>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Programado para {format(new Date(task.scheduledDate), 'HH:mm', { locale: es })}
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-gray-400 mt-1">
-          Programado para {format(new Date(task.scheduledDate), 'HH:mm', { locale: es })}
-        </p>
-      </div>
+      ))}
     </div>
   );
 }

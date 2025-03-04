@@ -1,75 +1,93 @@
-// src/lib/services/clientService.ts
-import { clients } from '@/data/mock/clients';
-import { Client } from '@/types/clientTypes';
+// lib/services/plantService.ts
+import { plants } from '@/data/mock/plants';
+import { Plant } from '@/types/plantTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
 const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
 
 /**
- * Obtiene todos los clientes
+ * Obtiene todas las plantas
  */
-export const getAllClients = async (): Promise<Client[]> => {
+export const getAllPlants = async (): Promise<Plant[]> => {
   await simulateLatency();
-  return [...clients];
+  return [...plants];
 };
 
 /**
- * Obtiene un cliente por su ID
+ * Obtiene una planta por su ID
  */
-export const getClientById = async (id: number): Promise<Client | undefined> => {
+export const getPlantById = async (id: number): Promise<Plant | undefined> => {
   await simulateLatency();
-  return clients.find(client => client.id === id);
+  return plants.find(plant => plant.id === id);
 };
 
 /**
- * Crea un nuevo cliente
+ * Obtiene plantas por cliente
  */
-export const createClient = async (clientData: Omit<Client, 'id'>): Promise<Client> => {
+export const getPlantsByClientId = async (clientId: number): Promise<Plant[]> => {
   await simulateLatency();
   
-  // Simulamos la creación asignando un nuevo ID (en una DB real esto sería automático)
-  const newId = Math.max(...clients.map(c => c.id)) + 1;
-  const newClient: Client = {
+  // Si el clientId es 0, se trata de un administrador y devolvemos todas las plantas
+  if (clientId === 0) {
+    return [...plants];
+  }
+  
+  return plants.filter(plant => plant.clientId === clientId);
+};
+
+/**
+ * Obtiene plantas por usuario (utiliza la función de plantas por cliente)
+ */
+export const getUserPlants = async (clientId: number): Promise<Plant[]> => {
+  return getPlantsByClientId(clientId);
+};
+
+/**
+ * Crea una nueva planta
+ */
+export const createPlant = async (plantData: Omit<Plant, 'id'>): Promise<Plant> => {
+  await simulateLatency();
+  
+  // Simulamos la creación asignando un nuevo ID
+  const newId = Math.max(...plants.map(p => p.id)) + 1;
+  const newPlant: Plant = {
     id: newId,
-    ...clientData
+    ...plantData
   };
   
   // En una implementación real, aquí se añadiría a la base de datos
-  // Para el mock, no modificamos el array original para evitar problemas de estado
   
-  return newClient;
+  return newPlant;
 };
 
 /**
- * Actualiza un cliente existente
+ * Actualiza una planta existente
  */
-export const updateClient = async (id: number, clientData: Partial<Client>): Promise<Client | undefined> => {
+export const updatePlant = async (id: number, plantData: Partial<Plant>): Promise<Plant | undefined> => {
   await simulateLatency();
   
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return undefined;
+  const plantIndex = plants.findIndex(plant => plant.id === id);
+  if (plantIndex === -1) return undefined;
   
   // En una implementación real, aquí se actualizaría en la base de datos
-  // Para el mock, creamos un objeto actualizado pero no modificamos el array original
-  const updatedClient: Client = {
-    ...clients[clientIndex],
-    ...clientData
+  const updatedPlant: Plant = {
+    ...plants[plantIndex],
+    ...plantData
   };
   
-  return updatedClient;
+  return updatedPlant;
 };
 
 /**
- * Elimina un cliente
+ * Elimina una planta
  */
-export const deleteClient = async (id: number): Promise<boolean> => {
+export const deletePlant = async (id: number): Promise<boolean> => {
   await simulateLatency();
   
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return false;
+  const plantIndex = plants.findIndex(plant => plant.id === id);
+  if (plantIndex === -1) return false;
   
   // En una implementación real, aquí se eliminaría de la base de datos
-  // Para el mock, simplemente devolvemos true para simular éxito
   
   return true;
 };

@@ -1,7 +1,6 @@
-// src/lib/services/alarmService.ts
-import { alarms } from '@/data/mock/alarms';
-import { devices } from '@/data/mock/devices';
-import { Alarm, AlarmLevel, AlarmStatus } from '@/types/alarmTypes';
+// lib/services/alarmService.ts
+import { dummyAlerts, dummyDevices } from '@/lib/solar/dummyData';
+import { Alarm } from '@/types/alarmTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
 const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
@@ -9,178 +8,165 @@ const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
 /**
  * Obtiene todas las alarmas
  */
-export const getAllAlarms = async (limit?: number): Promise<Alarm[]> => {
+export const getAllAlarms = async (plantId?: number): Promise<Alarm[]> => {
   await simulateLatency();
+  let alerts = [...dummyAlerts];
   
-  const result = [...alarms].sort((a, b) => 
-    new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
-  );
+  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
+  if (plantId) {
+    // Obtener IDs de dispositivos de la planta
+    const plantDeviceIds = dummyDevices
+      .filter(device => device.plantId === plantId)
+      .map(device => device.id);
+    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
+  }
   
-  return limit ? result.slice(0, limit) : result;
+  return alerts;
 };
 
 /**
- * Obtiene alarmas por estado
+ * Obtiene alarmas filtradas por estado
  */
-export const getAlarmsByStatus = async (status: AlarmStatus): Promise<Alarm[]> => {
+export const getAlarmsByStatus = async (
+  status: string,
+  plantId?: number
+): Promise<Alarm[]> => {
   await simulateLatency();
+  let alerts = dummyAlerts.filter(alert => alert.status.toLowerCase() === status.toLowerCase());
   
-  return alarms
-    .filter(alarm => alarm.status === status)
-    .sort((a, b) => 
-      new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
-    );
+  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
+  if (plantId) {
+    // Obtener IDs de dispositivos de la planta
+    const plantDeviceIds = dummyDevices
+      .filter(device => device.plantId === plantId)
+      .map(device => device.id);
+    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
+  }
+  
+  return alerts;
 };
 
 /**
- * Obtiene alarmas por nivel
+ * Obtiene alarmas por nivel de severidad
  */
-export const getAlarmsByLevel = async (level: AlarmLevel): Promise<Alarm[]> => {
+export const getAlarmsByLevel = async (
+  level: string,
+  plantId?: number
+): Promise<Alarm[]> => {
   await simulateLatency();
+  let alerts = dummyAlerts.filter(alert => alert.level.toLowerCase() === level.toLowerCase());
   
-  return alarms
-    .filter(alarm => alarm.level === level)
-    .sort((a, b) => 
-      new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
-    );
-};
-
-/**
- * Obtiene alarmas por dispositivo
- */
-export const getAlarmsByDeviceId = async (deviceId: number): Promise<Alarm[]> => {
-  await simulateLatency();
+  // Si se proporciona un ID de planta, filtrar las alertas de esa planta
+  if (plantId) {
+    // Obtener IDs de dispositivos de la planta
+    const plantDeviceIds = dummyDevices
+      .filter(device => device.plantId === plantId)
+      .map(device => device.id);
+    alerts = alerts.filter(alert => plantDeviceIds.includes(alert.deviceId));
+  }
   
-  return alarms
-    .filter(alarm => alarm.deviceId === deviceId)
-    .sort((a, b) => 
-      new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
-    );
-};
-
-/**
- * Obtiene alarmas por planta
- */
-export const getAlarmsByPlantId = async (plantId: number): Promise<Alarm[]> => {
-  await simulateLatency();
-  
-  // Obtenemos los IDs de los dispositivos de la planta
-  const plantDeviceIds = devices
-    .filter(device => device.plantId === plantId)
-    .map(device => device.id);
-  
-  // Filtramos las alarmas por esos dispositivos
-  return alarms
-    .filter(alarm => plantDeviceIds.includes(alarm.deviceId))
-    .sort((a, b) => 
-      new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime()
-    );
+  return alerts;
 };
 
 /**
  * Obtiene una alarma por su ID
  */
-export const getAlarmById = async (id: number): Promise<Alarm | undefined> => {
+export const getAlarmById = async (
+  alarmId: number
+): Promise<Alarm | undefined> => {
   await simulateLatency();
-  return alarms.find(alarm => alarm.id === id);
+  return dummyAlerts.find(alert => alert.id === alarmId);
 };
 
 /**
- * Crea una nueva alarma
+ * Reconoce una alarma (cambia su estado a 'acknowledged')
  */
-export const createAlarm = async (alarmData: Omit<Alarm, 'id'>): Promise<Alarm> => {
+export const acknowledgeAlarm = async (
+  alarmId: number,
+  userId: string
+): Promise<Alarm | undefined> => {
   await simulateLatency();
+  const alertIndex = dummyAlerts.findIndex(alert => alert.id === alarmId);
+  if (alertIndex === -1) return undefined;
   
-  // Simulamos la creación asignando un nuevo ID
-  const newId = Math.max(...alarms.map(a => a.id)) + 1;
-  const newAlarm: Alarm = {
-    id: newId,
-    ...alarmData
+  // En una implementación real, aquí actualizarías la alarma en la base de datos
+  const updatedAlert: Alarm = {
+    ...dummyAlerts[alertIndex],
+    status: 'acknowledged',
+    acknowledgedBy: userId,
+    acknowledgedAt: new Date().toISOString()
   };
   
-  // En una implementación real, aquí se añadiría a la base de datos
-  
-  return newAlarm;
+  return updatedAlert;
 };
 
 /**
- * Actualiza una alarma existente
+ * Resuelve una alarma (cambia su estado a 'resolved')
  */
-export const updateAlarm = async (id: number, alarmData: Partial<Alarm>): Promise<Alarm | undefined> => {
+export const resolveAlarm = async (
+  alarmId: number,
+  userId: string,
+  resolution?: string
+): Promise<Alarm | undefined> => {
   await simulateLatency();
+  const alertIndex = dummyAlerts.findIndex(alert => alert.id === alarmId);
+  if (alertIndex === -1) return undefined;
   
-  const alarmIndex = alarms.findIndex(alarm => alarm.id === id);
-  if (alarmIndex === -1) return undefined;
-  
-  // En una implementación real, aquí se actualizaría en la base de datos
-  const updatedAlarm: Alarm = {
-    ...alarms[alarmIndex],
-    ...alarmData
+  // En una implementación real, aquí actualizarías la alarma en la base de datos
+  const updatedAlert: Alarm = {
+    ...dummyAlerts[alertIndex],
+    status: 'resolved',
+    resolvedBy: userId,
+    resolvedAt: new Date().toISOString(),
+    resolution: resolution
   };
   
-  return updatedAlarm;
+  return updatedAlert;
 };
 
 /**
- * Marca una alarma como resuelta
+ * Obtiene estadísticas de alarmas para un parque solar
+ * Esta es la función que faltaba y causaba el error
  */
-export const resolveAlarm = async (id: number): Promise<Alarm | undefined> => {
+export const getAlarmStatistics = async (plantId?: number) => {
   await simulateLatency();
   
-  const alarmIndex = alarms.findIndex(alarm => alarm.id === id);
-  if (alarmIndex === -1) return undefined;
+  // Obtener todas las alarmas filtradas por planta si se proporciona plantId
+  const allAlarms = await getAllAlarms(plantId);
   
-  // En una implementación real, aquí se actualizaría en la base de datos
-  const updatedAlarm: Alarm = {
-    ...alarms[alarmIndex],
-    status: 'Resuelta',
-    resolutionDate: new Date().toISOString()
+  // Filtrar alarmas activas
+  const activeAlarms = allAlarms.filter(alarm => alarm.status === 'active');
+  
+  // Contar alarmas por nivel
+  const byLevel: Record<string, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0
   };
   
-  return updatedAlarm;
-};
-
-/**
- * Obtiene estadísticas de alarmas
- */
-export const getAlarmStatistics = async (plantId?: number): Promise<{
-  total: number;
-  active: number;
-  byLevel: Record<AlarmLevel, number>;
-  recentAlarms: Alarm[];
-}> => {
-  await simulateLatency();
-  
-  // Obtener alarmas filtradas por planta si se proporciona un ID
-  const filteredAlarms = plantId 
-    ? await getAlarmsByPlantId(plantId)
-    : alarms;
-  
-  // Inicializamos contadores
-  const byLevel: Record<AlarmLevel, number> = {
-    'Advertencia': 0,
-    'Menor': 0,
-    'Mayor': 0,
-    'Crítica': 0
-  };
-  
-  // Contamos por nivel
-  filteredAlarms.forEach(alarm => {
-    byLevel[alarm.level]++;
+  allAlarms.forEach(alarm => {
+    if (byLevel[alarm.level] !== undefined) {
+      byLevel[alarm.level]++;
+    }
   });
   
-  // Contamos alarmas activas
-  const activeAlarms = filteredAlarms.filter(alarm => alarm.status === 'Activa');
-  
-  // Obtenemos las alarmas más recientes
-  const recentAlarms = [...filteredAlarms]
+  // Obtener las alarmas más recientes
+  const recentAlarms = [...allAlarms]
     .sort((a, b) => new Date(b.alarmDate).getTime() - new Date(a.alarmDate).getTime())
     .slice(0, 5);
   
   return {
-    total: filteredAlarms.length,
+    total: allAlarms.length,
     active: activeAlarms.length,
     byLevel,
     recentAlarms
   };
+};
+
+/**
+ * Versión alternativa para compatibilidad - devuelve mismo resultado que getAlarmStatistics
+ */
+export const getAlarmStatsByPlantId = async (plantId: number) => {
+  return getAlarmStatistics(plantId);
 };

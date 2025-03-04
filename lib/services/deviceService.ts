@@ -1,75 +1,135 @@
-// src/lib/services/clientService.ts
-import { clients } from '@/data/mock/clients';
-import { Client } from '@/types/clientTypes';
+// lib/services/deviceService.ts
+import { devices } from '@/data/mock/devices';
+import { Device } from '@/types/deviceTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
 const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
 
 /**
- * Obtiene todos los clientes
+ * Obtiene todos los dispositivos, opcionalmente filtrados por planta
  */
-export const getAllClients = async (): Promise<Client[]> => {
-  await simulateLatency();
-  return [...clients];
-};
-
-/**
- * Obtiene un cliente por su ID
- */
-export const getClientById = async (id: number): Promise<Client | undefined> => {
-  await simulateLatency();
-  return clients.find(client => client.id === id);
-};
-
-/**
- * Crea un nuevo cliente
- */
-export const createClient = async (clientData: Omit<Client, 'id'>): Promise<Client> => {
+export const getAllDevices = async (plantId?: number): Promise<Device[]> => {
   await simulateLatency();
   
-  // Simulamos la creación asignando un nuevo ID (en una DB real esto sería automático)
-  const newId = Math.max(...clients.map(c => c.id)) + 1;
-  const newClient: Client = {
+  // Si no se proporciona un plantId, devuelve todos los dispositivos (para administradores)
+  if (!plantId) return [...devices];
+  
+  // Filtra los dispositivos por plantId
+  return devices.filter(device => device.plantId === plantId);
+};
+
+/**
+ * Obtiene un dispositivo por su ID
+ */
+export const getDeviceById = async (id: number): Promise<Device | undefined> => {
+  await simulateLatency();
+  return devices.find(device => device.id === id);
+};
+
+/**
+ * Obtiene dispositivos por estado, opcionalmente filtrados por planta
+ */
+export const getDevicesByStatus = async (status: string, plantId?: number): Promise<Device[]> => {
+  await simulateLatency();
+  
+  let filteredDevices = devices.filter(device => device.status === status);
+  
+  // Si se proporciona un plantId, filtra por planta también
+  if (plantId) {
+    filteredDevices = filteredDevices.filter(device => device.plantId === plantId);
+  }
+  
+  return filteredDevices;
+};
+
+/**
+ * Obtiene dispositivos por tipo, opcionalmente filtrados por planta
+ */
+export const getDevicesByType = async (type: string, plantId?: number): Promise<Device[]> => {
+  await simulateLatency();
+  
+  let filteredDevices = devices.filter(device => device.type === type);
+  
+  // Si se proporciona un plantId, filtra por planta también
+  if (plantId) {
+    filteredDevices = filteredDevices.filter(device => device.plantId === plantId);
+  }
+  
+  return filteredDevices;
+};
+
+/**
+ * Crea un nuevo dispositivo
+ */
+export const createDevice = async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
+  await simulateLatency();
+  
+  // Simulamos la creación asignando un nuevo ID
+  const newId = Math.max(...devices.map(d => d.id)) + 1;
+  const newDevice: Device = {
     id: newId,
-    ...clientData
+    ...deviceData
   };
   
   // En una implementación real, aquí se añadiría a la base de datos
-  // Para el mock, no modificamos el array original para evitar problemas de estado
   
-  return newClient;
+  return newDevice;
 };
 
 /**
- * Actualiza un cliente existente
+ * Actualiza un dispositivo existente
  */
-export const updateClient = async (id: number, clientData: Partial<Client>): Promise<Client | undefined> => {
+export const updateDevice = async (id: number, deviceData: Partial<Device>): Promise<Device | undefined> => {
   await simulateLatency();
   
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return undefined;
+  const deviceIndex = devices.findIndex(device => device.id === id);
+  if (deviceIndex === -1) return undefined;
   
   // En una implementación real, aquí se actualizaría en la base de datos
-  // Para el mock, creamos un objeto actualizado pero no modificamos el array original
-  const updatedClient: Client = {
-    ...clients[clientIndex],
-    ...clientData
+  const updatedDevice: Device = {
+    ...devices[deviceIndex],
+    ...deviceData
   };
   
-  return updatedClient;
+  return updatedDevice;
 };
 
 /**
- * Elimina un cliente
+ * Elimina un dispositivo
  */
-export const deleteClient = async (id: number): Promise<boolean> => {
+export const deleteDevice = async (id: number): Promise<boolean> => {
   await simulateLatency();
   
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return false;
+  const deviceIndex = devices.findIndex(device => device.id === id);
+  if (deviceIndex === -1) return false;
   
   // En una implementación real, aquí se eliminaría de la base de datos
-  // Para el mock, simplemente devolvemos true para simular éxito
   
   return true;
+};
+
+/**
+ * Obtiene estadísticas de dispositivos por planta
+ */
+export const getDeviceStatsByPlantId = async (plantId?: number): Promise<{
+  total: number;
+  online: number;
+  warning: number;
+  error: number;
+  maintenance: number;
+}> => {
+  await simulateLatency();
+  
+  // Filtrar dispositivos por planta si se proporciona un plantId
+  const filteredDevices = plantId 
+    ? devices.filter(device => device.plantId === plantId)
+    : devices;
+  
+  return {
+    total: filteredDevices.length,
+    online: filteredDevices.filter(d => d.status === 'Activo').length,
+    warning: filteredDevices.filter(d => d.status === 'Advertencia').length,
+    error: filteredDevices.filter(d => d.status === 'Falla').length,
+    maintenance: filteredDevices.filter(d => d.status === 'Mantenimiento').length
+  };
 };

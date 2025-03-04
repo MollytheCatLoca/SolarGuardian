@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/OldComp/theme-provider";
 import { Analytics } from "@vercel/analytics/react";
 import { ReactNode } from "react";
 import { CardProvider } from "@/context/CardContext"; // Importar el CardProvider

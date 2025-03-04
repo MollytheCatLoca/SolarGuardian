@@ -1,3 +1,4 @@
+// app/(root)/dashboard/layout.tsx
 import { getLoggedInUser } from "@/lib/actions/user.actions";
 import SolarSidebar from "@/components/solar/SolarSidebar";
 import SolarHeader from "@/components/solar/SolarHeader";
@@ -16,6 +17,8 @@ export default async function DashboardLayout({
   
   if (!loggedIn) redirect('/sign-in');
   
+  const clientId = loggedIn.clientId || 0; // 0 para administradores
+  
   return (
     <main className="flex h-screen w-full bg-[#0a0b14] text-white">
       {/* Sidebar para pantallas medianas y grandes */}
@@ -27,13 +30,13 @@ export default async function DashboardLayout({
         <div className="root-layout md:hidden">
           <Image src="/BISLogo.svg" width={40} height={40} alt="SolarGuardian" />
           <div>
-            <SolarMobileNav user={loggedIn} />
+            <SolarMobileNav user={loggedIn} clientId={clientId} />
           </div>
         </div>
         
         {/* Header para pantallas medianas y grandes */}
         <div className="hidden md:block">
-          <SolarHeader />
+          <SolarHeader clientId={clientId} />
         </div>
         
         {/* Contenido de la página */}

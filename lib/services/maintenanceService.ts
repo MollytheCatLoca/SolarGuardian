@@ -1,75 +1,110 @@
-// src/lib/services/clientService.ts
-import { clients } from '@/data/mock/clients';
-import { Client } from '@/types/clientTypes';
+// lib/services/maintenanceService.ts
+import { dummyMaintenanceTasks } from '@/lib/solar/dummyData';
+import { MaintenanceTask } from '@/types/solarTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
 const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
 
 /**
- * Obtiene todos los clientes
+ * Obtiene todas las tareas de mantenimiento
  */
-export const getAllClients = async (): Promise<Client[]> => {
+export const getAllMaintenanceTasks = async (plantId?: number): Promise<MaintenanceTask[]> => {
   await simulateLatency();
-  return [...clients];
+  let tasks = [...dummyMaintenanceTasks];
+  
+  // Si se proporciona un ID de planta, filtrar las tareas de esa planta
+  if (plantId) {
+    tasks = tasks.filter(task => task.plantId === plantId);
+  }
+  
+  return tasks;
 };
 
 /**
- * Obtiene un cliente por su ID
+ * Obtiene tareas de mantenimiento por estado
  */
-export const getClientById = async (id: number): Promise<Client | undefined> => {
+export const getMaintenanceTasksByStatus = async (
+  status: string,
+  plantId?: number
+): Promise<MaintenanceTask[]> => {
   await simulateLatency();
-  return clients.find(client => client.id === id);
+  let tasks = dummyMaintenanceTasks.filter(task => task.status === status);
+  
+  // Si se proporciona un ID de planta, filtrar las tareas de esa planta
+  if (plantId) {
+    tasks = tasks.filter(task => task.plantId === plantId);
+  }
+  
+  return tasks;
 };
 
 /**
- * Crea un nuevo cliente
+ * Obtiene una tarea de mantenimiento por su ID
  */
-export const createClient = async (clientData: Omit<Client, 'id'>): Promise<Client> => {
+export const getMaintenanceTaskById = async (
+  taskId: number
+): Promise<MaintenanceTask | undefined> => {
+  await simulateLatency();
+  return dummyMaintenanceTasks.find(task => task.id === taskId);
+};
+
+/**
+ * Obtiene estadísticas de mantenimiento para un parque solar
+ */
+export const getMaintenanceStatistics = async (plantId?: number) => {
   await simulateLatency();
   
-  // Simulamos la creación asignando un nuevo ID (en una DB real esto sería automático)
-  const newId = Math.max(...clients.map(c => c.id)) + 1;
-  const newClient: Client = {
-    id: newId,
-    ...clientData
+  // Filtrar tareas por planta si se proporciona un ID
+  let tasks = [...dummyMaintenanceTasks];
+  if (plantId) {
+    tasks = tasks.filter(task => task.plantId === plantId);
+  }
+  
+  // Contar tareas por estado
+  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const inProgressTasks = tasks.filter(task => task.status === 'in-progress');
+  const completedTasks = tasks.filter(task => task.status === 'completed');
+  
+  // Obtener próximas tareas programadas
+  const upcomingTasks = pendingTasks
+    .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+    .slice(0, 5);
+  
+  return {
+    total: tasks.length,
+    pending: pendingTasks.length,
+    inProgress: inProgressTasks.length,
+    completed: completedTasks.length,
+    upcomingTasks
+  };
+};
+
+/**
+ * Versión alternativa para compatibilidad - devuelve mismo resultado que getMaintenanceStatistics
+ */
+export const getMaintenanceStatsByPlantId = async (plantId: number) => {
+  return getMaintenanceStatistics(plantId);
+};
+
+/**
+ * Actualiza el estado de una tarea de mantenimiento
+ */
+export const updateMaintenanceTaskStatus = async (
+  taskId: number,
+  status: string,
+  updatedBy: string
+): Promise<MaintenanceTask | undefined> => {
+  await simulateLatency();
+  const taskIndex = dummyMaintenanceTasks.findIndex(task => task.id === taskId);
+  if (taskIndex === -1) return undefined;
+  
+  // En una implementación real, aquí actualizarías la tarea en la base de datos
+  const updatedTask: MaintenanceTask = {
+    ...dummyMaintenanceTasks[taskIndex],
+    status: status,
+    updatedBy: updatedBy,
+    updatedAt: new Date().toISOString()
   };
   
-  // En una implementación real, aquí se añadiría a la base de datos
-  // Para el mock, no modificamos el array original para evitar problemas de estado
-  
-  return newClient;
-};
-
-/**
- * Actualiza un cliente existente
- */
-export const updateClient = async (id: number, clientData: Partial<Client>): Promise<Client | undefined> => {
-  await simulateLatency();
-  
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return undefined;
-  
-  // En una implementación real, aquí se actualizaría en la base de datos
-  // Para el mock, creamos un objeto actualizado pero no modificamos el array original
-  const updatedClient: Client = {
-    ...clients[clientIndex],
-    ...clientData
-  };
-  
-  return updatedClient;
-};
-
-/**
- * Elimina un cliente
- */
-export const deleteClient = async (id: number): Promise<boolean> => {
-  await simulateLatency();
-  
-  const clientIndex = clients.findIndex(client => client.id === id);
-  if (clientIndex === -1) return false;
-  
-  // En una implementación real, aquí se eliminaría de la base de datos
-  // Para el mock, simplemente devolvemos true para simular éxito
-  
-  return true;
+  return updatedTask;
 };

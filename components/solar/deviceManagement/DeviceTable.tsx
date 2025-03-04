@@ -2,18 +2,17 @@
 
 import React, { useState } from 'react';
 import { dummyDevices } from '@/lib/solar/dummyData';
-import { Device } from '@/types/solarTypes';
 import { Search, Filter, ArrowUpDown, CheckCircle, AlertCircle, Wrench, XCircle } from 'lucide-react';
 
 export default function DeviceTable() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string[]>([]);
-  const [filterType, setFilterType] = useState<string[]>([]);
+  const [filterStatus, setFilterStatus] = useState([]);
+  const [filterType, setFilterType] = useState([]);
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   
   // Función para ordenar los dispositivos
-  const sortDevices = (a: Device, b: Device) => {
+  const sortDevices = (a, b) => {
     if (sortBy === 'name') {
       return sortOrder === 'asc'
         ? a.name.localeCompare(b.name)
@@ -34,17 +33,29 @@ export default function DeviceTable() {
   // Filtrar y ordenar dispositivos
   const filteredDevices = dummyDevices
     .filter(device => {
-      const matchesSearch = device.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = filterStatus.length === 0 || filterStatus.includes(device.status);
-      const matchesType = filterType.length === 0 || filterType.includes(device.type);
+      // Validar que las propiedades existan antes de usar toLowerCase
+      const nameMatch = device.name && searchTerm ? 
+        device.name.toLowerCase().includes(searchTerm.toLowerCase()) : 
+        !searchTerm;
+      
+      const serialMatch = device.serialNumber && searchTerm ? 
+        device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) : 
+        !searchTerm;
+      
+      const matchesSearch = nameMatch || serialMatch;
+      
+      const matchesStatus = filterStatus.length === 0 || 
+        (device.status && filterStatus.includes(device.status));
+      
+      const matchesType = filterType.length === 0 || 
+        (device.type && filterType.includes(device.type));
       
       return matchesSearch && matchesStatus && matchesType;
     })
     .sort(sortDevices);
   
   // Función para cambiar el orden
-  const toggleSortOrder = (field: string) => {
+  const toggleSortOrder = (field) => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -54,7 +65,7 @@ export default function DeviceTable() {
   };
   
   // Función para alternar filtros de estado
-  const toggleStatusFilter = (status: string) => {
+  const toggleStatusFilter = (status) => {
     setFilterStatus(prev => 
       prev.includes(status) 
         ? prev.filter(s => s !== status)
@@ -63,7 +74,7 @@ export default function DeviceTable() {
   };
   
   // Función para alternar filtros de tipo
-  const toggleTypeFilter = (type: string) => {
+  const toggleTypeFilter = (type) => {
     setFilterType(prev => 
       prev.includes(type) 
         ? prev.filter(t => t !== type)
@@ -72,7 +83,7 @@ export default function DeviceTable() {
   };
   
   // Función para obtener icono según estado
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status) => {
     switch (status) {
       case 'online':
         return <CheckCircle size={16} className="text-green-500" />;
@@ -90,7 +101,7 @@ export default function DeviceTable() {
   };
   
   // Función para obtener etiqueta de estado en español
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status) => {
     switch (status) {
       case 'online':
         return 'En línea';
@@ -108,7 +119,7 @@ export default function DeviceTable() {
   };
   
   // Función para obtener etiqueta de tipo en español
-  const getTypeLabel = (type: string) => {
+  const getTypeLabel = (type) => {
     switch (type) {
       case 'panel':
         return 'Panel';
