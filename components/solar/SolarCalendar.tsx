@@ -1,38 +1,98 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { es } from 'date-fns/locale';
-import { dummyMaintenanceTasks } from '@/lib/solar/dummyData';
-import { CalendarClock, CheckSquare, ClipboardList, Clock, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, parseISO, isSameDay, addMonths, subMonths } from 'date-fns';
+import { MaintenanceTask } from '@/types/solarTypes';
+import { 
+  CalendarClock, 
+  CheckSquare, 
+  ClipboardList, 
+  Clock, 
+  AlertTriangle, 
+  ChevronLeft, 
+  ChevronRight,
+  RefreshCw,
+  Wrench,
+  X
+} from 'lucide-react';
+import { format, parseISO, isSameDay, addMonths, subMonths, isToday, isFuture } from 'date-fns';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
-export default function SolarCalendar() {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+// Importar los servicios de mantenimiento
+import { 
+  getAllMaintenanceTasks, 
+  getMaintenanceTasksByStatus
+} from '@/lib/services/maintenanceService';
+
+interface SolarCalendarProps {
+  plantId?: number;
+}
+
+export default function SolarCalendar({ plantId }: SolarCalendarProps) {
+  const params = useParams();
+  const resolvedPlantId = plantId || (params.plantId ? parseInt(params.plantId as string) : null);
+  
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month');
   const [currentMonth, setCurrentMonth] = useState(new Date());
-
+  
+  // Estado para las tareas de mantenimiento
+  const [maintenanceTasks, setMaintenanceTasks] = useState<MaintenanceTask[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  // Función para cargar todas las tareas de mantenimiento
+  const loadAllTasks = useCallback(async () => {
+    if (!resolvedPlantId) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Obtener todas las tareas para la planta
+      const tasks = await getAllMaintenanceTasks(resolvedPlantId);
+      setMaintenanceTasks(tasks);
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error("Error cargando tareas de mantenimiento:", err);
+      setError("Error al cargar tareas de mantenimiento. Intente nuevamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [resolvedPlantId]);
+  
+  // Cargar datos cuando cambia la planta
+  useEffect(() => {
+    if (resolvedPlantId) {
+      loadAllTasks();
+    } else {
+      console.error("No se encontró un ID de planta válido");
+      setError("No se encontró un ID de planta válido");
+    }
+  }, [resolvedPlantId, loadAllTasks]);
+  
   // Procesar las fechas de mantenimiento para el calendario
-  const maintenanceDates = dummyMaintenanceTasks.map(task => ({
+  const events = maintenanceTasks.map(task => ({
     ...task,
     date: parseISO(task.scheduledDate),
     type: 'maintenance'
   }));
-
-  // Podríamos agregar más tipos de eventos como inspecciones, limpiezas, etc.
-  const events = [...maintenanceDates];
-
+  
   // Función para obtener eventos del día seleccionado
   const getEventsForSelectedDate = () => {
     if (!selectedDate) return [];
     return events.filter(event => isSameDay(event.date, selectedDate));
   };
-
+  
   // Función para verificar si un día tiene eventos
   const hasDayEvent = (day: Date) => {
     return events.some(event => isSameDay(event.date, day));
   };
-
+  
   // Función para obtener la clase de prioridad de un día
   const getDayClass = (day: Date) => {
     const dayEvents = events.filter(event => isSameDay(event.date, day));
@@ -48,9 +108,9 @@ export default function SolarCalendar() {
     
     return '';
   };
-
+  
   const selectedDateEvents = getEventsForSelectedDate();
-
+  
   // Función para obtener ícono por tipo de tarea
   const getTaskIcon = (status: string) => {
     switch (status) {
@@ -64,7 +124,7 @@ export default function SolarCalendar() {
         return <CalendarClock size={16} className="text-gray-400" />;
     }
   };
-
+  
   // Función para obtener clase de prioridad
   const getPriorityClass = (priority: string) => {
     switch (priority) {
@@ -78,7 +138,21 @@ export default function SolarCalendar() {
         return 'bg-gray-500/20 text-gray-400 border-gray-400';
     }
   };
-
+  
+  // Función para obtener etiqueta de prioridad
+  const getPriorityText = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'Alta';
+      case 'medium':
+        return 'Media';
+      case 'low':
+        return 'Baja';
+      default:
+        return priority;
+    }
+  };
+  
   // Función para generar el calendario manualmente
   const renderCalendar = () => {
     const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
@@ -204,13 +278,46 @@ export default function SolarCalendar() {
       </div>
     );
   };
-
+  
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Calendario</h2>
-        <p className="text-sm text-gray-400">Programación de mantenimiento y eventos del parque solar</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-white">Calendario</h2>
+          <p className="text-sm text-gray-400">Programación de mantenimiento y eventos del parque solar</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-gray-400">
+            Última actualización: {lastUpdate.toLocaleTimeString()}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadAllTasks}
+            disabled={isLoading}
+            className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
+          >
+            <RefreshCw size={16} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
+      
+      {/* Mostrar mensaje de error si existe */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg flex items-center">
+          <AlertTriangle className="mr-2" size={16} />
+          <span>{error}</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-auto text-red-400" 
+            onClick={() => setError(null)}
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendario */}
@@ -233,12 +340,16 @@ export default function SolarCalendar() {
             </div>
           </CardHeader>
           <CardContent>
-            {viewMode === 'month' ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
+            ) : viewMode === 'month' ? (
               <div className="p-1">
                 {renderCalendar()}
               </div>
             ) : (
-              <div className="h-[300px] overflow-y-auto">
+              <div className="h-[380px] overflow-y-auto pr-2 custom-scrollbar">
                 <div className="space-y-4">
                   {events.length > 0 ? (
                     events
@@ -265,14 +376,26 @@ export default function SolarCalendar() {
                               </div>
                             </div>
                             <span className={`text-xs px-2 py-0.5 rounded-full border ${getPriorityClass(event.priority)}`}>
-                              {event.priority === 'high' ? 'Alta' : 
-                               event.priority === 'medium' ? 'Media' : 'Baja'}
+                              {getPriorityText(event.priority)}
                             </span>
+                          </div>
+                          
+                          <div className="flex justify-between items-center mt-3">
+                            <div className="flex items-center text-xs text-gray-400">
+                              <span className="mr-2">Duración:</span>
+                              <span>{Math.floor(event.estimatedDuration / 60)}h {event.estimatedDuration % 60}min</span>
+                            </div>
+                            <Link 
+                              href={`/dashboard/${resolvedPlantId}/maintenance?id=${event.id}`}
+                              className="text-xs text-[#4a4ae2] hover:text-[#6b6bf5] flex items-center"
+                            >
+                              Ver detalles
+                            </Link>
                           </div>
                         </div>
                       ))
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
+                    <div className="flex items-center justify-center h-full text-gray-400 py-12">
                       No hay eventos programados
                     </div>
                   )}
@@ -293,7 +416,7 @@ export default function SolarCalendar() {
           </CardHeader>
           <CardContent>
             {selectedDateEvents.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
                 {selectedDateEvents.map((event, index) => (
                   <div key={index} className="border-b border-[#374151] pb-4 last:border-b-0 last:pb-0">
                     <div className="flex items-start">
@@ -304,8 +427,7 @@ export default function SolarCalendar() {
                         <div className="flex justify-between">
                           <p className="text-sm font-medium">{event.title}</p>
                           <span className={`text-xs px-2 py-0.5 rounded-full border ${getPriorityClass(event.priority)}`}>
-                            {event.priority === 'high' ? 'Alta' : 
-                             event.priority === 'medium' ? 'Media' : 'Baja'}
+                            {getPriorityText(event.priority)}
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-1">{format(event.date, "HH:mm", { locale: es })}</p>
@@ -347,6 +469,15 @@ export default function SolarCalendar() {
                             </div>
                           </div>
                         )}
+                        
+                        <div className="mt-3 flex justify-end">
+                          <Link 
+                            href={`/dashboard/${resolvedPlantId}/maintenance?id=${event.id}`}
+                            className="text-xs text-[#4a4ae2] hover:text-[#6b6bf5] flex items-center"
+                          >
+                            Ver detalles completos
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -356,9 +487,12 @@ export default function SolarCalendar() {
               <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                 <CalendarClock size={32} className="mb-2 text-gray-500" />
                 <p>No hay eventos programados para este día</p>
-                <button className="mt-4 bg-[#4a4ae2] text-white px-3 py-1 rounded-md text-sm">
-                  Programar nueva tarea
-                </button>
+                <Link href={`/dashboard/${resolvedPlantId}/maintenance`}>
+                  <Button className="mt-4 bg-[#4a4ae2] text-white px-3 py-1 rounded-md text-sm hover:bg-[#3b3be0]">
+                    <Wrench size={14} className="mr-2" />
+                    Gestionar mantenimiento
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>
@@ -378,7 +512,7 @@ export default function SolarCalendar() {
                 <CalendarClock size={16} className="text-blue-400" />
               </div>
               <p className="text-2xl font-bold">
-                {dummyMaintenanceTasks.filter(t => t.status === 'pending').length}
+                {maintenanceTasks.filter(t => t.status === 'pending').length}
               </p>
               <p className="text-xs text-gray-400 mt-1">Tareas pendientes</p>
             </div>
@@ -389,7 +523,7 @@ export default function SolarCalendar() {
                 <AlertTriangle size={16} className="text-red-400" />
               </div>
               <p className="text-2xl font-bold">
-                {dummyMaintenanceTasks.filter(t => t.priority === 'high' && t.status === 'pending').length}
+                {maintenanceTasks.filter(t => t.priority === 'high' && t.status === 'pending').length}
               </p>
               <p className="text-xs text-gray-400 mt-1">Alta prioridad</p>
             </div>
@@ -399,22 +533,29 @@ export default function SolarCalendar() {
                 <h3 className="text-sm font-medium">Próximo Mantenimiento</h3>
                 <Clock size={16} className="text-yellow-400" />
               </div>
-              {dummyMaintenanceTasks
-                .filter(t => t.status === 'pending')
-                .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0] ? (
+              {
+                maintenanceTasks
+                  .filter(t => t.status === 'pending' && isFuture(parseISO(t.scheduledDate)))
+                  .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())
+                  .length > 0 ? (
                 <>
                   <p className="text-sm font-medium truncate">
-                    {dummyMaintenanceTasks
-                      .filter(t => t.status === 'pending')
-                      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0].title}
+                    {maintenanceTasks
+                      .filter(t => t.status === 'pending' && isFuture(parseISO(t.scheduledDate)))
+                      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0]?.title}
                   </p>
                   <p className="text-xs text-yellow-400 mt-1">
-                    {format(
-                      parseISO(dummyMaintenanceTasks
-                        .filter(t => t.status === 'pending')
-                        .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0].scheduledDate),
-                      "dd/MM/yyyy", { locale: es }
-                    )}
+                    {maintenanceTasks
+                      .filter(t => t.status === 'pending' && isFuture(parseISO(t.scheduledDate)))
+                      .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0]?.scheduledDate
+                      ? format(
+                          parseISO(maintenanceTasks
+                            .filter(t => t.status === 'pending' && isFuture(parseISO(t.scheduledDate)))
+                            .sort((a, b) => new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime())[0]?.scheduledDate),
+                          "dd/MM/yyyy", { locale: es }
+                        )
+                      : 'Fecha no disponible'
+                    }
                   </p>
                 </>
               ) : (
