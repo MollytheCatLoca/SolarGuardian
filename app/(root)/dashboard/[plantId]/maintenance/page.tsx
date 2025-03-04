@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { MaintenanceTask } from '@/types/solarTypes';
 import { 
   CalendarClock, 
   CheckSquare, 
@@ -17,35 +16,59 @@ import {
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 
-// Importar los servicios de mantenimiento
+// Importar los servicios actualizados y tipos unificados
 import { 
   getAllMaintenanceTasks, 
   getMaintenanceTasksByStatus,
-  updateMaintenanceTaskStatus 
+  updateMaintenanceTaskStatus,
+  getMaintenanceStatistics
 } from '@/lib/services/maintenanceService';
+import { UnifiedMaintenanceTask } from '@/types/unifiedMaintenanceTypes';
 
 export default function MaintenancePage() {
   const params = useParams();
-  const router = useRouter();
   const plantId = params.plantId ? parseInt(params.plantId as string) : null;
   
-  // Estados para las tareas
-  const [pendingTasks, setPendingTasks] = useState<MaintenanceTask[]>([]);
-  const [inProgressTasks, setInProgressTasks] = useState<MaintenanceTask[]>([]);
-  const [completedTasks, setCompletedTasks] = useState<MaintenanceTask[]>([]);
-  const [selectedTask, setSelectedTask] = useState<MaintenanceTask | null>(null);
+  // Estados para las tareas usando el tipo unificado
+  const [pendingTasks, setPendingTasks] = useState<UnifiedMaintenanceTask[]>([]);
+  const [inProgressTasks, setInProgressTasks] = useState<UnifiedMaintenanceTask[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<UnifiedMaintenanceTask[]>([]);
+  const [selectedTask, setSelectedTask] = useState<UnifiedMaintenanceTask | null>(null);
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0
+  });
   
   // Estado para gestionar carga y errores
   const [loading, setLoading] = useState({
     pending: true,
     inProgress: true,
-    completed: true
+    completed: true,
+    stats: true
   });
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  // Función para cargar las estadísticas
+  const loadStatistics = useCallback(async () => {
+    if (!plantId) return;
+    
+    try {
+      setLoading(prev => ({ ...prev, stats: true }));
+      const stats = await getMaintenanceStatistics(plantId);
+      setStatistics(stats);
+    } catch (err) {
+      console.error("Error cargando estadísticas:", err);
+      setError("Error al cargar estadísticas. Intente nuevamente.");
+    } finally {
+      setLoading(prev => ({ ...prev, stats: false }));
+    }
+  }, [plantId]);
   
   // Función para cargar las tareas pendientes
   const loadPendingTasks = useCallback(async () => {
@@ -104,36 +127,37 @@ export default function MaintenancePage() {
     }
   }, [plantId]);
   
-  // Función para cargar todas las tareas
-  const loadAllTasks = useCallback(async () => {
+  // Función para cargar todos los datos
+  const loadAllData = useCallback(async () => {
     setError(null);
     
     // Cargar en paralelo para mejorar rendimiento
     await Promise.all([
+      loadStatistics(),
       loadPendingTasks(),
       loadInProgressTasks(),
       loadCompletedTasks()
     ]);
     
     setLastUpdate(new Date());
-  }, [loadPendingTasks, loadInProgressTasks, loadCompletedTasks]);
+  }, [loadStatistics, loadPendingTasks, loadInProgressTasks, loadCompletedTasks]);
   
   // Cargar datos cuando cambia la planta
   useEffect(() => {
     if (plantId) {
-      loadAllTasks();
+      loadAllData();
     } else {
-      // Si no hay plantId, redirigir a página principal o mostrar error
+      // Si no hay plantId, mostrar error
       console.error("No se encontró un ID de planta válido");
       setError("No se encontró un ID de planta válido");
     }
-  }, [plantId, loadAllTasks]);
+  }, [plantId, loadAllData]);
   
-  // Función para iniciar una tarea (cambiar estado a "en-progress")
-  const handleStartTask = async (task: MaintenanceTask) => {
+  // Función para iniciar una tarea (cambiar estado a "in-progress")
+  const handleStartTask = async (task: UnifiedMaintenanceTask) => {
     try {
       setIsUpdating(true);
-      // En un sistema real, necesitaríamos el ID de usuario actual
+      // En un sistema real, obtendríamos el ID de usuario actual
       const mockUserId = 'user-123'; 
       
       await updateMaintenanceTaskStatus(task.id, 'in-progress', mockUserId, plantId || undefined);
@@ -141,6 +165,7 @@ export default function MaintenancePage() {
       // Actualizar las listas de tareas
       await loadPendingTasks();
       await loadInProgressTasks();
+      await loadStatistics();
       
       // Cerrar modal
       setSelectedTask(null);
@@ -154,10 +179,10 @@ export default function MaintenancePage() {
   };
   
   // Función para completar una tarea (cambiar estado a "completed")
-  const handleCompleteTask = async (task: MaintenanceTask) => {
+  const handleCompleteTask = async (task: UnifiedMaintenanceTask) => {
     try {
       setIsUpdating(true);
-      // En un sistema real, necesitaríamos el ID de usuario actual
+      // En un sistema real, obtendríamos el ID de usuario actual
       const mockUserId = 'user-123'; 
       
       await updateMaintenanceTaskStatus(task.id, 'completed', mockUserId, plantId || undefined);
@@ -165,6 +190,7 @@ export default function MaintenancePage() {
       // Actualizar las listas de tareas
       await loadInProgressTasks();
       await loadCompletedTasks();
+      await loadStatistics();
       
       // Cerrar modal
       setSelectedTask(null);
@@ -179,12 +205,15 @@ export default function MaintenancePage() {
   
   // Utilidad para obtener texto de prioridad
   const getPriorityText = (priority: string) => {
-    switch (priority) {
+    switch (priority.toLowerCase()) {
       case 'high':
+      case 'alta':
         return 'Alta';
       case 'medium':
+      case 'media':
         return 'Media';
       case 'low':
+      case 'baja':
         return 'Baja';
       default:
         return priority;
@@ -206,11 +235,11 @@ export default function MaintenancePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={loadAllTasks}
-            disabled={loading.pending || loading.inProgress || loading.completed}
+            onClick={loadAllData}
+            disabled={loading.pending || loading.inProgress || loading.completed || isUpdating}
             className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
           >
-            <RefreshCw size={16} className={`mr-2 ${loading.pending || loading.inProgress || loading.completed ? 'animate-spin' : ''}`} />
+            <RefreshCw size={16} className={`mr-2 ${(loading.pending || loading.inProgress || loading.completed || isUpdating) ? 'animate-spin' : ''}`} />
             Actualizar
           </Button>
         </div>
@@ -239,19 +268,19 @@ export default function MaintenancePage() {
             value="pending"
             className="data-[state=active]:bg-[#4a4ae2] data-[state=active]:text-white text-gray-300"
           >
-            Pendientes ({pendingTasks.length})
+            Pendientes ({statistics.pending})
           </TabsTrigger>
           <TabsTrigger 
             value="in-progress"
             className="data-[state=active]:bg-[#4a4ae2] data-[state=active]:text-white text-gray-300"
           >
-            En Progreso ({inProgressTasks.length})
+            En Progreso ({statistics.inProgress})
           </TabsTrigger>
           <TabsTrigger 
             value="completed"
             className="data-[state=active]:bg-[#4a4ae2] data-[state=active]:text-white text-gray-300"
           >
-            Completadas ({completedTasks.length})
+            Completadas ({statistics.completed})
           </TabsTrigger>
         </TabsList>
         
@@ -263,7 +292,7 @@ export default function MaintenancePage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Tareas pendientes</p>
-                    <h2 className="text-2xl font-bold">{pendingTasks.length}</h2>
+                    <h2 className="text-2xl font-bold">{statistics.pending}</h2>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
                     <ClipboardList size={24} className="text-blue-400" />
@@ -312,7 +341,7 @@ export default function MaintenancePage() {
                           {loading.pending ? (
                             <span className="text-gray-400">...</span>
                           ) : (
-                            pendingTasks.filter(t => t.priority === 'high').length
+                            pendingTasks.filter(t => t.priority.toLowerCase() === 'alta' || t.priority.toLowerCase() === 'high').length
                           )}
                         </p>
                       </div>
@@ -322,7 +351,7 @@ export default function MaintenancePage() {
                           {loading.pending ? (
                             <span className="text-gray-400">...</span>
                           ) : (
-                            pendingTasks.filter(t => t.priority === 'medium').length
+                            pendingTasks.filter(t => t.priority.toLowerCase() === 'media' || t.priority.toLowerCase() === 'medium').length
                           )}
                         </p>
                       </div>
@@ -332,7 +361,7 @@ export default function MaintenancePage() {
                           {loading.pending ? (
                             <span className="text-gray-400">...</span>
                           ) : (
-                            pendingTasks.filter(t => t.priority === 'low').length
+                            pendingTasks.filter(t => t.priority.toLowerCase() === 'baja' || t.priority.toLowerCase() === 'low').length
                           )}
                         </p>
                       </div>
@@ -376,8 +405,8 @@ export default function MaintenancePage() {
                           <h3 className="font-medium">{task.title}</h3>
                           <div className={`
                             px-2 py-1 rounded-full text-xs
-                            ${task.priority === 'high' ? 'bg-red-500/20 text-red-400' : 
-                              task.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' : 
+                            ${getPriorityText(task.priority).toLowerCase() === 'alta' ? 'bg-red-500/20 text-red-400' : 
+                              getPriorityText(task.priority).toLowerCase() === 'media' ? 'bg-yellow-500/20 text-yellow-400' : 
                               'bg-green-500/20 text-green-400'}
                           `}>
                             {getPriorityText(task.priority)}
@@ -549,8 +578,8 @@ export default function MaintenancePage() {
                   <div>
                     <h3 className="text-sm text-gray-400 mb-1">Prioridad</h3>
                     <p className={`
-                      ${selectedTask.priority === 'high' ? 'text-red-400' : 
-                        selectedTask.priority === 'medium' ? 'text-yellow-400' : 
+                      ${getPriorityText(selectedTask.priority).toLowerCase() === 'alta' ? 'text-red-400' : 
+                        getPriorityText(selectedTask.priority).toLowerCase() === 'media' ? 'text-yellow-400' : 
                         'text-green-400'}
                     `}>
                       {getPriorityText(selectedTask.priority)}
@@ -559,43 +588,47 @@ export default function MaintenancePage() {
                   <div>
                     <h3 className="text-sm text-gray-400 mb-1">Estado</h3>
                     <p className={`
-                      ${selectedTask.status === 'pending' ? 'text-blue-400' : 
-                        selectedTask.status === 'in-progress' ? 'text-yellow-400' : 
-                        'text-green-400'}
+                      ${selectedTask.status.includes('Pendiente') || selectedTask.status.includes('pending') ? 'text-blue-400' : 
+                       selectedTask.status.includes('Proceso') || selectedTask.status.includes('progress') ? 'text-yellow-400' : 
+                       'text-green-400'}
                     `}>
-                      {selectedTask.status === 'pending' ? 'Pendiente' : 
-                       selectedTask.status === 'in-progress' ? 'En Progreso' : 
+                      {selectedTask.status.includes('Pendiente') || selectedTask.status.includes('pending') ? 'Pendiente' : 
+                       selectedTask.status.includes('Proceso') || selectedTask.status.includes('progress') ? 'En Progreso' : 
                        'Completada'}
                     </p>
                   </div>
                 </div>
                 
                 {/* Checklist */}
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-2">Lista de verificación</h3>
-                  <div className="space-y-2">
-                    {selectedTask.checklist.map(item => (
-                      <div key={item.id} className="flex items-center">
-                        <div className="border border-[#374151] rounded w-5 h-5 mr-2 flex items-center justify-center">
-                          {item.completed && <CheckSquare size={14} className="text-green-400" />}
+                {selectedTask.checklist && (
+                  <div>
+                    <h3 className="text-sm text-gray-400 mb-2">Lista de verificación</h3>
+                    <div className="space-y-2">
+                      {selectedTask.checklist.map(item => (
+                        <div key={item.id} className="flex items-center">
+                          <div className="border border-[#374151] rounded w-5 h-5 mr-2 flex items-center justify-center">
+                            {item.completed && <CheckSquare size={14} className="text-green-400" />}
+                          </div>
+                          <span className="text-sm">{item.task}</span>
                         </div>
-                        <span className="text-sm">{item.task}</span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Dispositivos involucrados */}
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-2">Dispositivos involucrados</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTask.devices.map(deviceId => (
-                      <div key={deviceId} className="bg-[#111928] px-3 py-1 rounded-full text-xs">
-                        {deviceId}
-                      </div>
-                    ))}
+                {selectedTask.devices && selectedTask.devices.length > 0 && (
+                  <div>
+                    <h3 className="text-sm text-gray-400 mb-2">Dispositivos involucrados</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTask.devices.map(deviceId => (
+                        <div key={deviceId} className="bg-[#111928] px-3 py-1 rounded-full text-xs">
+                          {deviceId}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
                 
                 {/* Notas adicionales si existen */}
                 {selectedTask.notes && (
@@ -617,7 +650,7 @@ export default function MaintenancePage() {
                   </Button>
                   
                   {/* Mostrar botón según estado */}
-                  {selectedTask.status === 'pending' && (
+                  {(selectedTask.status.includes('Pendiente') || selectedTask.status.includes('pending')) && (
                     <Button 
                       className="bg-[#4a4ae2] text-white hover:bg-[#3b3be0]"
                       onClick={() => handleStartTask(selectedTask)}
@@ -637,7 +670,7 @@ export default function MaintenancePage() {
                     </Button>
                   )}
                   
-                  {selectedTask.status === 'in-progress' && (
+                  {(selectedTask.status.includes('Proceso') || selectedTask.status.includes('progress')) && (
                     <Button 
                       className="bg-green-600 text-white hover:bg-green-700"
                       onClick={() => handleCompleteTask(selectedTask)}

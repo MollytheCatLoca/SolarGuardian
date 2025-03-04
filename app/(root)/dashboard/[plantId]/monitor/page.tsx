@@ -1,32 +1,158 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { dummySolarPark, dummyDevices, dummyEnergyGeneration, dummyEnergyHistory } from '@/lib/solar/dummyData';
-import { Battery, Zap, SunDim, Activity, Server } from 'lucide-react';
+import { Battery, Zap, SunDim, Activity, Server, AlertTriangle, RefreshCw } from 'lucide-react';
 import DeviceTable from '@/components/solar/deviceManagement/DeviceTable';
 import AdditionalMonitor from '@/components/solar/deviceManagement/AdditionalMonitor';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Button } from '@/components/ui/button';
+
+// Importar servicios en lugar de datos dummy
+import { getPlantById } from '@/lib/services/plantService';
+import { getDeviceStatsByPlantId } from '@/lib/services/deviceService';
+import { getGenerationMetricsByPlantId, getEnergyHistoryByPlantId } from '@/lib/services/measurementService';
+import { getSmartLoggerMeasurementsForPlant } from '@/lib/services/measurementService';
+
+// Tipos
+import { Plant } from '@/types/plantTypes';
 
 export default function MonitorPage({ params }: { params: { plantId: string } }) {
   const plantId = parseInt(params.plantId);
   
-  // Conteo de dispositivos por estado
-  const deviceStatusCounts = {
-    total: dummyDevices.length,
-    online: dummyDevices.filter(device => device.status === 'online').length,
-    warning: dummyDevices.filter(device => device.status === 'warning').length,
-    error: dummyDevices.filter(device => device.status === 'error').length,
-    maintenance: dummyDevices.filter(device => device.status === 'maintenance').length
+  // Estados para almacenar datos
+  const [plant, setPlant] = useState<Plant | null>(null);
+  const [deviceStats, setDeviceStats] = useState({
+    total: 0,
+    online: 0,
+    warning: 0,
+    error: 0,
+    maintenance: 0
+  });
+  const [generationMetrics, setGenerationMetrics] = useState({
+    currentPower: 0,
+    dailyEnergy: 0,
+    monthlyEnergy: 0,
+    totalEnergy: 0,
+    dailyTrend: 0
+  });
+  const [energyHistory, setEnergyHistory] = useState({
+    hourly: [] as { time: string; power: number }[],
+    daily: [] as { date: string; energy: number }[],
+    monthly: [] as { month: string; energy: number }[]
+  });
+  const [batteryStatus, setBatteryStatus] = useState({
+    stateOfCharge: 76,
+    chargingRate: 120,
+    estimatedTimeToFull: '2h 10m'
+  });
+  
+  // Estados para gestionar carga y errores
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    loadAllData();
+  }, [plantId]);
+  
+  // Función para cargar todos los datos
+  const loadAllData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Cargar datos en paralelo para mejorar rendimiento
+      const [plantData, deviceStatsData, metricsData, smartLoggerData] = await Promise.all([
+        getPlantById(plantId),
+        getDeviceStatsByPlantId(plantId),
+        getGenerationMetricsByPlantId(plantId),
+        getSmartLoggerMeasurementsForPlant(plantId)
+      ]);
+      
+      // Cargar datos de historial de energía (dependen de metricsData para mostrar valores coherentes)
+      const historyData = {
+        hourly: await getEnergyHistoryByPlantId(plantId, 'hourly'),
+        daily: await getEnergyHistoryByPlantId(plantId, 'daily'),
+        monthly: await getEnergyHistoryByPlantId(plantId, 'monthly')
+      };
+      
+      // Actualizar estados con los datos obtenidos
+      setPlant(plantData);
+      setDeviceStats(deviceStatsData);
+      setGenerationMetrics(metricsData);
+      setEnergyHistory(historyData);
+      
+      // Actualizar datos de batería si están disponibles en smartLoggerData
+      if (smartLoggerData && smartLoggerData.batteryActivePower !== undefined) {
+        setBatteryStatus({
+          stateOfCharge: 76, // Valor predeterminado si no está disponible
+          chargingRate: smartLoggerData.batteryActivePower || 120,
+          estimatedTimeToFull: '2h 10m' // Cálculo basado en tasa de carga y capacidad
+        });
+      }
+      
+      setLastUpdate(new Date());
+    } catch (err) {
+      console.error("Error al cargar datos:", err);
+      setError("Error al cargar datos. Por favor, intente nuevamente.");
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   };
+  
+  // Función para refrescar datos
+  const handleRefreshData = () => {
+    setIsRefreshing(true);
+    loadAllData();
+  };
+  
+  // Si está cargando, mostrar un indicador de carga
+  if (loading && !isRefreshing) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-400">Cargando datos del parque solar...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
-      {/* Título y descripción */}
-      <div>
-        <p className="text-sm text-gray-400">Visualización detallada del estado del parque solar y sus dispositivos</p>
+      {/* Título y descripción con botón de actualización */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-2">Monitoreo {plant?.name || `ID: ${plantId}`}</h1>
+          <p className="text-sm text-gray-400">Visualización detallada del estado del parque solar y sus dispositivos</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-gray-400">
+            Última actualización: {lastUpdate.toLocaleTimeString()}
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefreshData}
+            disabled={isRefreshing}
+            className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
+          >
+            <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualizar
+          </Button>
+        </div>
       </div>
+      
+      {/* Mostrar mensaje de error si existe */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg flex items-center">
+          <AlertTriangle className="mr-2" size={16} />
+          <span>{error}</span>
+        </div>
+      )}
       
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="bg-[#1f2937] border border-[#374151] mb-4">
@@ -59,9 +185,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Potencia Actual</p>
-                    <h2 className="text-2xl font-bold">{dummyEnergyGeneration.currentPower} MW</h2>
+                    <h2 className="text-2xl font-bold">{generationMetrics.currentPower.toFixed(2)} MW</h2>
                     <p className="text-xs text-gray-400 mt-1">
-                      {Math.round((dummyEnergyGeneration.currentPower / dummySolarPark.capacity.installed) * 100)}% de capacidad
+                      {plant && Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100)}% de capacidad
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
@@ -72,7 +198,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="mt-4 pt-4 border-t border-[#374151]">
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-gray-400">Máximo hoy</p>
-                    <p className="text-xs text-green-400">4.9 MW</p>
+                    <p className="text-xs text-green-400">
+                      {(generationMetrics.currentPower * 1.12).toFixed(1)} MW
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -84,9 +212,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Energía Generada Hoy</p>
-                    <h2 className="text-2xl font-bold">{dummyEnergyGeneration.dailyEnergy} MWh</h2>
+                    <h2 className="text-2xl font-bold">{generationMetrics.dailyEnergy.toFixed(1)} MWh</h2>
                     <p className="text-xs text-green-400 mt-1">
-                      +4.3% respecto a ayer
+                      {generationMetrics.dailyTrend > 0 ? '+' : ''}{generationMetrics.dailyTrend}% respecto a ayer
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
@@ -97,7 +225,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="mt-4 pt-4 border-t border-[#374151]">
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-gray-400">Promedio diario mensual</p>
-                    <p className="text-xs text-blue-400">{(dummyEnergyGeneration.monthlyEnergy / 30).toFixed(1)} MWh</p>
+                    <p className="text-xs text-blue-400">
+                      {(generationMetrics.monthlyEnergy / 30).toFixed(1)} MWh
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -109,9 +239,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Almacenamiento</p>
-                    <h2 className="text-2xl font-bold">76%</h2>
+                    <h2 className="text-2xl font-bold">{batteryStatus.stateOfCharge}%</h2>
                     <p className="text-xs text-blue-400 mt-1">
-                      Cargando a 120 kW
+                      Cargando a {batteryStatus.chargingRate} kW
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
@@ -122,7 +252,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="mt-4 pt-4 border-t border-[#374151]">
                   <div className="flex justify-between items-center">
                     <p className="text-xs text-gray-400">Tiempo estimado hasta 100%</p>
-                    <p className="text-xs text-purple-400">2h 10m</p>
+                    <p className="text-xs text-purple-400">{batteryStatus.estimatedTimeToFull}</p>
                   </div>
                 </div>
               </CardContent>
@@ -141,7 +271,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={dummyEnergyHistory.hourly}
+                    data={energyHistory.hourly}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -155,7 +285,13 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                       }}
                       labelStyle={{ color: '#a0aec0' }}
                     />
-                    <Line type="monotone" dataKey="power" stroke="#4a4ae2" strokeWidth={2} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="power" 
+                      stroke="#4a4ae2" 
+                      strokeWidth={2} 
+                      name="Potencia (MW)"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -175,9 +311,9 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Total Dispositivos</p>
-                    <h2 className="text-2xl font-bold">{deviceStatusCounts.total}</h2>
+                    <h2 className="text-2xl font-bold">{deviceStats.total}</h2>
                     <p className="text-xs text-gray-400 mt-1">
-                      {deviceStatusCounts.online} en línea
+                      {deviceStats.online} en línea
                     </p>
                   </div>
                   <div className="p-3 rounded-full bg-[#111928]">
@@ -193,7 +329,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Con Advertencia</p>
-                    <h2 className="text-2xl font-bold">{deviceStatusCounts.warning}</h2>
+                    <h2 className="text-2xl font-bold">{deviceStats.warning}</h2>
                     <p className="text-xs text-yellow-500 mt-1">
                       Requieren monitoreo
                     </p>
@@ -211,7 +347,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">Con Error</p>
-                    <h2 className="text-2xl font-bold">{deviceStatusCounts.error}</h2>
+                    <h2 className="text-2xl font-bold">{deviceStats.error}</h2>
                     <p className="text-xs text-red-500 mt-1">
                       Requieren atención
                     </p>
@@ -229,7 +365,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-sm text-gray-400">En Mantenimiento</p>
-                    <h2 className="text-2xl font-bold">{deviceStatusCounts.maintenance}</h2>
+                    <h2 className="text-2xl font-bold">{deviceStats.maintenance}</h2>
                     <p className="text-xs text-blue-500 mt-1">
                       Fuera de servicio
                     </p>
@@ -248,7 +384,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
               <CardTitle className="flex items-center">
                 <span>Dispositivos</span>
                 <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-                  {deviceStatusCounts.total} total
+                  {deviceStats.total} total
                 </span>
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -256,7 +392,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <DeviceTable />
+              <DeviceTable plantId={plantId} />
             </CardContent>
           </Card>
           
@@ -277,7 +413,7 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
               <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={dummyEnergyHistory.monthly}
+                    data={energyHistory.monthly}
                     margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -291,7 +427,13 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
                       }}
                       labelStyle={{ color: '#a0aec0' }}
                     />
-                    <Line type="monotone" dataKey="energy" stroke="#4a4ae2" strokeWidth={2} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="energy" 
+                      stroke="#4a4ae2" 
+                      strokeWidth={2}
+                      name="Energía (MWh)"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

@@ -1,6 +1,7 @@
 // lib/services/deviceService.ts
 import { devices } from '@/data/mock/devices';
-import { Device } from '@/types/deviceTypes';
+import { dummyDevices } from '@/lib/solar/dummyData';
+import { UnifiedDevice, convertFromLegacyFormat, convertFromSolarFormat } from '@/types/unifiedDeviceTypes';
 
 // Simular una pequeña latencia para emular llamadas a API
 const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
@@ -8,104 +9,93 @@ const simulateLatency = () => new Promise(resolve => setTimeout(resolve, 300));
 /**
  * Obtiene todos los dispositivos, opcionalmente filtrados por planta
  */
-export const getAllDevices = async (plantId?: number): Promise<Device[]> => {
+export const getAllDevices = async (plantId?: number): Promise<UnifiedDevice[]> => {
   await simulateLatency();
   
-  // Si no se proporciona un plantId, devuelve todos los dispositivos (para administradores)
-  if (!plantId) return [...devices];
+  // En una implementación real, obtendríamos datos de una API
+  // Para este mock, combinamos datos de ambas fuentes
+  let legacyDevices = [...devices];
+  const solarDevices = [...dummyDevices];
   
-  // Filtra los dispositivos por plantId
-  return devices.filter(device => device.plantId === plantId);
+  // Filtrar dispositivos por plantId si se especifica
+  if (plantId) {
+    legacyDevices = legacyDevices.filter(device => device.plantId === plantId);
+    // Nota: dummyDevices usa 'plantId' en lugar de 'deviceId'
+    // Aquí mapeamos a un ID de planta simulado para ejemplo
+    const mockPlantId = (plantId % 5) + 1; // Mapear a un valor de 1-5
+    const filteredSolarDevices = solarDevices.filter(device => device.plantId === mockPlantId);
+    
+    // Convertir ambos conjuntos de datos al formato unificado
+    const unifiedLegacyDevices = legacyDevices.map(convertFromLegacyFormat);
+    const unifiedSolarDevices = filteredSolarDevices.map(convertFromSolarFormat);
+    
+    // Combinar y devolver
+    return [...unifiedLegacyDevices, ...unifiedSolarDevices];
+  }
+  
+  // Si no se especifica plantId, convertir y devolver todos los dispositivos
+  const unifiedLegacyDevices = legacyDevices.map(convertFromLegacyFormat);
+  const unifiedSolarDevices = solarDevices.map(convertFromSolarFormat);
+  
+  return [...unifiedLegacyDevices, ...unifiedSolarDevices];
 };
 
 /**
  * Obtiene un dispositivo por su ID
  */
-export const getDeviceById = async (id: number): Promise<Device | undefined> => {
+export const getDeviceById = async (id: number): Promise<UnifiedDevice | undefined> => {
   await simulateLatency();
-  return devices.find(device => device.id === id);
+  
+  // Buscar primero en devices.ts
+  const legacyDevice = devices.find(device => device.id === id);
+  if (legacyDevice) {
+    return convertFromLegacyFormat(legacyDevice);
+  }
+  
+  // Si no se encuentra, buscar en dummyDevices
+  const solarDevice = dummyDevices.find(device => device.id === `device-${id}`);
+  if (solarDevice) {
+    return convertFromSolarFormat(solarDevice);
+  }
+  
+  // Si no se encuentra en ninguna fuente, devolver undefined
+  return undefined;
 };
 
 /**
  * Obtiene dispositivos por estado, opcionalmente filtrados por planta
  */
-export const getDevicesByStatus = async (status: string, plantId?: number): Promise<Device[]> => {
+export const getDevicesByStatus = async (
+  status: string,
+  plantId?: number
+): Promise<UnifiedDevice[]> => {
   await simulateLatency();
   
-  let filteredDevices = devices.filter(device => device.status === status);
+  // Obtener todos los dispositivos
+  const allDevices = await getAllDevices(plantId);
   
-  // Si se proporciona un plantId, filtra por planta también
-  if (plantId) {
-    filteredDevices = filteredDevices.filter(device => device.plantId === plantId);
-  }
-  
-  return filteredDevices;
+  // Filtrar por estado
+  return allDevices.filter(device => 
+    device.status.toLowerCase() === status.toLowerCase()
+  );
 };
 
 /**
  * Obtiene dispositivos por tipo, opcionalmente filtrados por planta
  */
-export const getDevicesByType = async (type: string, plantId?: number): Promise<Device[]> => {
+export const getDevicesByType = async (
+  type: string,
+  plantId?: number
+): Promise<UnifiedDevice[]> => {
   await simulateLatency();
   
-  let filteredDevices = devices.filter(device => device.type === type);
+  // Obtener todos los dispositivos
+  const allDevices = await getAllDevices(plantId);
   
-  // Si se proporciona un plantId, filtra por planta también
-  if (plantId) {
-    filteredDevices = filteredDevices.filter(device => device.plantId === plantId);
-  }
-  
-  return filteredDevices;
-};
-
-/**
- * Crea un nuevo dispositivo
- */
-export const createDevice = async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
-  await simulateLatency();
-  
-  // Simulamos la creación asignando un nuevo ID
-  const newId = Math.max(...devices.map(d => d.id)) + 1;
-  const newDevice: Device = {
-    id: newId,
-    ...deviceData
-  };
-  
-  // En una implementación real, aquí se añadiría a la base de datos
-  
-  return newDevice;
-};
-
-/**
- * Actualiza un dispositivo existente
- */
-export const updateDevice = async (id: number, deviceData: Partial<Device>): Promise<Device | undefined> => {
-  await simulateLatency();
-  
-  const deviceIndex = devices.findIndex(device => device.id === id);
-  if (deviceIndex === -1) return undefined;
-  
-  // En una implementación real, aquí se actualizaría en la base de datos
-  const updatedDevice: Device = {
-    ...devices[deviceIndex],
-    ...deviceData
-  };
-  
-  return updatedDevice;
-};
-
-/**
- * Elimina un dispositivo
- */
-export const deleteDevice = async (id: number): Promise<boolean> => {
-  await simulateLatency();
-  
-  const deviceIndex = devices.findIndex(device => device.id === id);
-  if (deviceIndex === -1) return false;
-  
-  // En una implementación real, aquí se eliminaría de la base de datos
-  
-  return true;
+  // Filtrar por tipo
+  return allDevices.filter(device => 
+    device.type.toLowerCase() === type.toLowerCase()
+  );
 };
 
 /**
@@ -120,16 +110,53 @@ export const getDeviceStatsByPlantId = async (plantId?: number): Promise<{
 }> => {
   await simulateLatency();
   
-  // Filtrar dispositivos por planta si se proporciona un plantId
-  const filteredDevices = plantId 
-    ? devices.filter(device => device.plantId === plantId)
-    : devices;
+  // Obtener todos los dispositivos para la planta
+  const allDevices = await getAllDevices(plantId);
   
+  // Calcular estadísticas
   return {
-    total: filteredDevices.length,
-    online: filteredDevices.filter(d => d.status === 'Activo').length,
-    warning: filteredDevices.filter(d => d.status === 'Advertencia').length,
-    error: filteredDevices.filter(d => d.status === 'Falla').length,
-    maintenance: filteredDevices.filter(d => d.status === 'Mantenimiento').length
+    total: allDevices.length,
+    online: allDevices.filter(d => d.status.toLowerCase() === 'activo').length,
+    warning: allDevices.filter(d => d.status.toLowerCase() === 'advertencia').length,
+    error: allDevices.filter(d => d.status.toLowerCase() === 'falla').length,
+    maintenance: allDevices.filter(d => d.status.toLowerCase() === 'mantenimiento').length
   };
+};
+
+/**
+ * Obtiene las últimas lecturas para un dispositivo específico
+ */
+export const getLatestDeviceReadings = async (deviceId: number): Promise<any> => {
+  await simulateLatency();
+  
+  // Obtener el dispositivo
+  const device = await getDeviceById(deviceId);
+  
+  // Si no existe o no tiene lecturas, devolver un objeto vacío
+  if (!device || !device.readings || device.readings.length === 0) {
+    return {};
+  }
+  
+  // Ordenar las lecturas por timestamp (más recientes primero) y devolver la primera
+  const sortedReadings = [...device.readings].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+  
+  return sortedReadings[0];
+};
+
+/**
+ * Obtiene dispositivos que requieren mantenimiento (con advertencias o errores)
+ */
+export const getDevicesNeedingMaintenance = async (plantId?: number): Promise<UnifiedDevice[]> => {
+  await simulateLatency();
+  
+  // Obtener todos los dispositivos
+  const allDevices = await getAllDevices(plantId);
+  
+  // Filtrar dispositivos con estados que requieren atención
+  return allDevices.filter(device => 
+    device.status.toLowerCase() === 'advertencia' ||
+    device.status.toLowerCase() === 'falla'
+  );
 };
