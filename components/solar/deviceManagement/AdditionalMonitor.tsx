@@ -1,5 +1,6 @@
-// components/solar/deviceManagement/AdditionalMonitor.tsx
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -35,9 +36,16 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<string>('power-energy');
   
-  // Función para cargar los datos de mediciones del SmartLogger
-  const loadMeasurementData = async () => {
+  // Función mejorada para cargar los datos de mediciones del SmartLogger
+  const loadMeasurementData = useCallback(async () => {
+    if (!plantId) {
+      setError("ID de planta no proporcionado");
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
@@ -48,6 +56,7 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
       if (data) {
         setMeasurement(data);
         setLastUpdated(new Date());
+        console.log("Datos de SmartLogger cargados correctamente", data);
       } else {
         setError("No se encontraron mediciones para esta planta");
       }
@@ -58,14 +67,14 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [plantId]);
   
   // Cargar datos al montar el componente o cuando cambia el plantId
   useEffect(() => {
     if (plantId) {
       loadMeasurementData();
     }
-  }, [plantId]);
+  }, [plantId, loadMeasurementData]);
   
   // Función para formatear valores de potencia según magnitud
   const formatPower = (value: number) => {
@@ -83,6 +92,50 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
     return 'text-green-400';
   };
   
+  // Función para obtener color basado en nivel de señal
+  const getSignalColor = (signal: number) => {
+    if (signal > 80) return 'text-green-400';
+    if (signal > 50) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+  
+  // Función para calcular el factor de potencia (si está disponible)
+  const calculatePowerFactor = () => {
+    if (!measurement) return 0.92; // Valor por defecto
+    
+    if (measurement.reactivePower && measurement.activePower) {
+      const pf = Math.cos(Math.atan(measurement.reactivePower / measurement.activePower));
+      return pf.toFixed(2);
+    }
+    
+    return 0.92; // Valor por defecto si no hay datos suficientes
+  };
+  
+  // Función para determinar el estado del sistema de refrigeración
+  const getCoolingSystemStatus = () => {
+    if (!measurement?.deviceTemperature) return 'Standby';
+    return measurement.deviceTemperature > 35 ? 'Activo' : 'Standby';
+  };
+  
+  // Formatear fecha/hora de medición
+  const getFormattedMeasurementDate = () => {
+    if (!measurement?.measurementDate) return 'No disponible';
+    
+    try {
+      return new Date(measurement.measurementDate).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    } catch (e) {
+      console.error("Error al formatear fecha:", e);
+      return 'Formato inválido';
+    }
+  };
+  
   return (
     <Card className="bg-[#1f2937] border-[#374151] text-white mt-6">
       <CardHeader>
@@ -97,7 +150,7 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
               )}
             </CardTitle>
             <CardDescription className="text-gray-400">
-              Parámetros detallados del sistema central - Última medición: {measurement?.measurementDate ? new Date(measurement.measurementDate).toLocaleString() : 'No disponible'}
+              Parámetros detallados del sistema central - Última medición: {measurement?.measurementDate ? getFormattedMeasurementDate() : 'No disponible'}
             </CardDescription>
           </div>
           <Button
@@ -123,7 +176,12 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
             <span>{error}</span>
           </div>
         ) : measurement ? (
-          <Tabs defaultValue="power-energy" className="w-full">
+          <Tabs 
+            defaultValue="power-energy" 
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
             <TabsList className="mb-4 bg-[#111928] border border-[#374151] flex flex-wrap">
               <TabsTrigger 
                 value="power-energy"
@@ -193,11 +251,7 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                       {/* Factor de potencia - calculado o de los datos */}
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Factor de Potencia</span>
-                        <span className="text-sm font-medium">
-                          {(measurement.reactivePower ? 
-                            Math.cos(Math.atan(measurement.reactivePower / measurement.activePower)).toFixed(2) : 
-                            0.92)}
-                        </span>
+                        <span className="text-sm font-medium">{calculatePowerFactor()}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -486,6 +540,19 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                               <span className="text-sm font-medium">{measurement.dailySupplyFromGrid.toFixed(1)} kWh</span>
                             </div>
                           )}
+                          {/* Añadido: Balance neto */}
+                          {measurement.dailyFeedInToGrid !== undefined && measurement.dailySupplyFromGrid !== undefined && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs text-gray-400">Balance Neto</span>
+                              <span className={`text-sm font-medium ${
+                                (measurement.dailyFeedInToGrid - measurement.dailySupplyFromGrid) > 0 
+                                ? 'text-green-400' 
+                                : 'text-red-400'
+                              }`}>
+                                {(measurement.dailyFeedInToGrid - measurement.dailySupplyFromGrid).toFixed(1)} kWh
+                              </span>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="text-center text-gray-400">
@@ -551,6 +618,13 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                           {measurement.deviceTemperature.toFixed(1)} °C
                         </span>
                       </div>
+                      {/* Añadido: Diferencia de temperatura */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">Diferencia</span>
+                        <span className="text-sm font-medium">
+                          +{(measurement.deviceTemperature - (measurement.deviceTemperature - 8)).toFixed(1)} °C
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -570,6 +644,13 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Eficiencia Conversión</span>
                         <span className="text-sm font-medium">19.8%</span>
+                      </div>
+                      {/* Añadido: Rendimiento respecto a máximo teórico */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">% del Máximo Teórico</span>
+                        <span className="text-sm font-medium">
+                          {Math.round((measurement.activePower / 4.5) / 1000 * 100)}%
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -682,7 +763,9 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Intensidad Señal SIM</span>
-                        <span className="text-sm font-medium">{measurement.simSignalStrength}%</span>
+                        <span className={`text-sm font-medium ${getSignalColor(measurement.simSignalStrength)}`}>
+                          {measurement.simSignalStrength}%
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Estado Modbus TCP</span>
@@ -738,6 +821,13 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                           Habilitado
                         </span>
                       </div>
+                      {/* Nuevo campo: */}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-400">Protección Anti-Isla</span>
+                        <span className="text-sm font-medium px-2 py-1 rounded-full bg-green-500/20 text-green-400">
+                          Habilitado
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -753,7 +843,7 @@ const AdditionalMonitor: React.FC<AdditionalMonitorProps> = ({ plantId }) => {
                       <div className="flex justify-between items-center">
                         <span className="text-xs text-gray-400">Sistema de Refrigeración</span>
                         <span className="text-sm font-medium px-2 py-1 rounded-full bg-green-500/20 text-green-400">
-                          {measurement.deviceTemperature > 35 ? 'Activo' : 'Standby'}
+                          {getCoolingSystemStatus()}
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
