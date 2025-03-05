@@ -2,27 +2,36 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Battery, Zap, SunDim, Activity, Server, AlertTriangle, RefreshCw } from 'lucide-react';
-import DeviceTable from '@/components/solar/deviceManagement/DeviceTable';
-import AdditionalMonitor from '@/components/solar/deviceManagement/AdditionalMonitor';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { redirect } from "next/navigation";
+import { useRouter } from 'next/navigation';
 
-// Importar servicios en lugar de datos dummy
-import { getPlantById } from '@/lib/services/plantService';
+// Importar servicios
+import { getPlantById } from "@/lib/services/plantService";
+import { getGenerationMetricsByPlantId } from "@/lib/services/measurementService";
+import { getAlarmStatistics } from "@/lib/services/alarmService";
+import { getMaintenanceStatistics } from "@/lib/services/maintenanceService";
 import { getDeviceStatsByPlantId } from '@/lib/services/deviceService';
-import { getGenerationMetricsByPlantId, getEnergyHistoryByPlantId } from '@/lib/services/measurementService';
-import { getSmartLoggerMeasurementsForPlant } from '@/lib/services/measurementService';
 
-// Tipos
-import { Plant } from '@/types/plantTypes';
+// Importar componentes
 
-export default function MonitorPage({ params }: { params: { plantId: string } }) {
+import { DashboardHeader } from '@/components/solar/DashboardHeader';
+import { OverviewTab} from '@/components/solar/monitor/OverviewTab';
+import { DevicesTab } from '@/components/solar/monitor/DevicesTab';
+import { AdvancedTab } from '@/components/solar/monitor/AdvancedTab';
+
+
+interface MonitorPageProps {
+  params: { plantId: string };
+}
+
+export default function MonitorPage({ params }: MonitorPageProps) {
   const plantId = parseInt(params.plantId);
+  const router = useRouter();
   
   // Estados para almacenar datos
-  const [plant, setPlant] = useState<Plant | null>(null);
+  const [plant, setPlant] = useState<any>(null);
   const [deviceStats, setDeviceStats] = useState({
     total: 0,
     online: 0,
@@ -37,64 +46,75 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
     totalEnergy: 0,
     dailyTrend: 0
   });
-  const [energyHistory, setEnergyHistory] = useState({
-    hourly: [] as { time: string; power: number }[],
-    daily: [] as { date: string; energy: number }[],
-    monthly: [] as { month: string; energy: number }[]
-  });
   const [batteryStatus, setBatteryStatus] = useState({
-    stateOfCharge: 76,
-    chargingRate: 120,
-    estimatedTimeToFull: '2h 10m'
+    chargeLevel: 76,
+    isCharging: true,
+    health: 98
+  });
+  const [alarmStats, setAlarmStats] = useState({
+    total: 0,
+    active: 0,
+    byLevel: {
+      Crítica: 0,
+      Mayor: 0,
+      Menor: 0,
+      Advertencia: 0
+    },
+    recentAlarms: []
+  });
+  const [maintenanceStats, setMaintenanceStats] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    upcomingTasks: []
   });
   
-  // Estados para gestionar carga y errores
+  // Estados para gestionar UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Cargar datos al montar el componente
   useEffect(() => {
     loadAllData();
-  }, [plantId]);
+    // En Next.js 14, useEffect sin dependencias podría ejecutarse
+    // múltiples veces durante el desarrollo debido a React Strict Mode,
+    // pero eso está bien para cargar datos iniciales
+  }, []);
   
   // Función para cargar todos los datos
   const loadAllData = async () => {
     try {
       setLoading(true);
       setError(null);
+      setIsRefreshing(true);
       
-      // Cargar datos en paralelo para mejorar rendimiento
-      const [plantData, deviceStatsData, metricsData, smartLoggerData] = await Promise.all([
-        getPlantById(plantId),
-        getDeviceStatsByPlantId(plantId),
-        getGenerationMetricsByPlantId(plantId),
-        getSmartLoggerMeasurementsForPlant(plantId)
-      ]);
-      
-      // Cargar datos de historial de energía (dependen de metricsData para mostrar valores coherentes)
-      const historyData = {
-        hourly: await getEnergyHistoryByPlantId(plantId, 'hourly'),
-        daily: await getEnergyHistoryByPlantId(plantId, 'daily'),
-        monthly: await getEnergyHistoryByPlantId(plantId, 'monthly')
-      };
-      
-      // Actualizar estados con los datos obtenidos
-      setPlant(plantData);
-      setDeviceStats(deviceStatsData);
-      setGenerationMetrics(metricsData);
-      setEnergyHistory(historyData);
-      
-      // Actualizar datos de batería si están disponibles en smartLoggerData
-      if (smartLoggerData && smartLoggerData.batteryActivePower !== undefined) {
-        setBatteryStatus({
-          stateOfCharge: 76, // Valor predeterminado si no está disponible
-          chargingRate: smartLoggerData.batteryActivePower || 120,
-          estimatedTimeToFull: '2h 10m' // Cálculo basado en tasa de carga y capacidad
-        });
+      // Verificar que la planta existe
+      const plantData = await getPlantById(plantId);
+      if (!plantData) {
+        redirect('/dashboard');
+        return; // Añadimos return para evitar ejecuciones posteriores
       }
       
+      // Cargar datos en paralelo para mejorar rendimiento
+      const [metricsData, deviceStatsData, alarmStatsData, maintenanceStatsData] = await Promise.all([
+        getGenerationMetricsByPlantId(plantId),
+        getDeviceStatsByPlantId(plantId),
+        getAlarmStatistics(plantId),
+        getMaintenanceStatistics(plantId)
+      ]);
+      
+      // Actualizar estados
+      setPlant(plantData);
+      setGenerationMetrics(metricsData);
+      setDeviceStats(deviceStatsData);
+      setAlarmStats(alarmStatsData);
+      setMaintenanceStats(maintenanceStatsData);
+      
+      // Actualizar última actualización
       setLastUpdate(new Date());
     } catch (err) {
       console.error("Error al cargar datos:", err);
@@ -105,10 +125,29 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
     }
   };
   
-  // Función para refrescar datos
+  // Función para refrescar datos (optimizada para Next.js 14)
   const handleRefreshData = () => {
     setIsRefreshing(true);
+    
+    // En Next.js 14, router.refresh() es más eficiente y está mejorado
+    router.refresh();
+    
+    // También cargamos los datos del cliente para mantener consistencia
     loadAllData();
+  };
+  
+  // Cálculos para usar unidades consistentes
+  const plantCapacityMW = plant ? (plant.totalCapacity / 1000) : 0;
+  const currentPowerMW = generationMetrics.currentPower / 1000;
+  const dailyEnergyMWh = generationMetrics.dailyEnergy / 1000;
+  const capacityPercentage = plant ? Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100) : 0;
+  
+  // Procesar los datos para los componentes
+  const overviewMetrics = {
+    currentPowerMW,
+    dailyEnergyMWh,
+    capacityPercentage,
+    dailyTrend: generationMetrics.dailyTrend
   };
   
   // Si está cargando, mostrar un indicador de carga
@@ -123,38 +162,37 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
 
   return (
     <div className="p-6 space-y-6">
-      {/* Título y descripción con botón de actualización */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Monitoreo {plant?.name || `ID: ${plantId}`}</h1>
-          <p className="text-sm text-gray-400">Visualización detallada del estado del parque solar y sus dispositivos</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <p className="text-xs text-gray-400">
-            Última actualización: {lastUpdate.toLocaleTimeString()}
-          </p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefreshData}
-            disabled={isRefreshing}
-            className="bg-[#1f2937] border-[#374151] text-white hover:bg-[#374151]"
-          >
-            <RefreshCw size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Actualizar
-          </Button>
-        </div>
-      </div>
+      {/* Dashboard Header */}
+      {plant && (
+        <DashboardHeader 
+          plant={plant}
+          plantCapacityMW={plantCapacityMW}
+          lastUpdate={lastUpdate}
+          isRefreshing={isRefreshing}
+          onRefresh={handleRefreshData}
+          error={error}
+          onClearError={() => setError(null)}
+        />
+      )}
       
       {/* Mostrar mensaje de error si existe */}
-      {error && (
+      {error && !plant && (
         <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-4 rounded-lg flex items-center">
           <AlertTriangle className="mr-2" size={16} />
           <span>{error}</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-auto text-red-400" 
+            onClick={() => loadAllData()}
+          >
+            Reintentar
+          </Button>
         </div>
       )}
       
-      <Tabs defaultValue="overview" className="w-full">
+      {/* Pestañas principales */}
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="bg-[#1f2937] border border-[#374151] mb-4">
           <TabsTrigger 
             value="overview"
@@ -169,279 +207,33 @@ export default function MonitorPage({ params }: { params: { plantId: string } })
             Dispositivos
           </TabsTrigger>
           <TabsTrigger 
-            value="generation"
+            value="advanced"
             className="data-[state=active]:bg-[#4a4ae2] data-[state=active]:text-white text-gray-300"
           >
-            Generación
+            Monitoreo Avanzado
           </TabsTrigger>
         </TabsList>
         
+        {/* Contenido de Resumen General */}
         <TabsContent value="overview" className="space-y-6">
-          {/* Resumen de métricas principales */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Potencia actual */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Potencia Actual</p>
-                    <h2 className="text-2xl font-bold">{generationMetrics.currentPower.toFixed(2)} MW</h2>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {plant && Math.round((generationMetrics.currentPower / plant.totalCapacity) * 100)}% de capacidad
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Zap size={24} className="text-yellow-400" />
-                  </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-[#374151]">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-400">Máximo hoy</p>
-                    <p className="text-xs text-green-400">
-                      {(generationMetrics.currentPower * 1.12).toFixed(1)} MW
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Energía diaria */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Energía Generada Hoy</p>
-                    <h2 className="text-2xl font-bold">{generationMetrics.dailyEnergy.toFixed(1)} MWh</h2>
-                    <p className="text-xs text-green-400 mt-1">
-                      {generationMetrics.dailyTrend > 0 ? '+' : ''}{generationMetrics.dailyTrend}% respecto a ayer
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <SunDim size={24} className="text-yellow-400" />
-                  </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-[#374151]">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-400">Promedio diario mensual</p>
-                    <p className="text-xs text-blue-400">
-                      {(generationMetrics.monthlyEnergy / 30).toFixed(1)} MWh
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Estado de almacenamiento */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Almacenamiento</p>
-                    <h2 className="text-2xl font-bold">{batteryStatus.stateOfCharge}%</h2>
-                    <p className="text-xs text-blue-400 mt-1">
-                      Cargando a {batteryStatus.chargingRate} kW
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Battery size={24} className="text-blue-400" />
-                  </div>
-                </div>
-                
-                <div className="mt-4 pt-4 border-t border-[#374151]">
-                  <div className="flex justify-between items-center">
-                    <p className="text-xs text-gray-400">Tiempo estimado hasta 100%</p>
-                    <p className="text-xs text-purple-400">{batteryStatus.estimatedTimeToFull}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Gráfico de generación horaria */}
-          <Card className="bg-[#1f2937] border-[#374151] text-white">
-            <CardHeader>
-              <CardTitle>Generación Horaria</CardTitle>
-              <CardDescription className="text-gray-400">
-                Potencia generada a lo largo del día
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={energyHistory.hourly}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="time" stroke="#718096" />
-                    <YAxis stroke="#718096" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#111928', 
-                        border: '1px solid #374151',
-                        color: 'white'
-                      }}
-                      labelStyle={{ color: '#a0aec0' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="power" 
-                      stroke="#4a4ae2" 
-                      strokeWidth={2} 
-                      name="Potencia (MW)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Componente de Mediciones Adicionales */}
-          <AdditionalMonitor plantId={plantId} />
+          <OverviewTab 
+            plantId={plantId}
+            metrics={overviewMetrics}
+            batteryStatus={batteryStatus}
+          />
         </TabsContent>
         
+        {/* Contenido de Dispositivos */}
         <TabsContent value="devices" className="space-y-6">
-          {/* Resumen de dispositivos */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Total de dispositivos */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Total Dispositivos</p>
-                    <h2 className="text-2xl font-bold">{deviceStats.total}</h2>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {deviceStats.online} en línea
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Server size={24} className="text-gray-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Dispositivos con advertencia */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Con Advertencia</p>
-                    <h2 className="text-2xl font-bold">{deviceStats.warning}</h2>
-                    <p className="text-xs text-yellow-500 mt-1">
-                      Requieren monitoreo
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Activity size={24} className="text-yellow-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Dispositivos con error */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Con Error</p>
-                    <h2 className="text-2xl font-bold">{deviceStats.error}</h2>
-                    <p className="text-xs text-red-500 mt-1">
-                      Requieren atención
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Activity size={24} className="text-red-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Dispositivos en mantenimiento */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">En Mantenimiento</p>
-                    <h2 className="text-2xl font-bold">{deviceStats.maintenance}</h2>
-                    <p className="text-xs text-blue-500 mt-1">
-                      Fuera de servicio
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <Activity size={24} className="text-blue-500" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Tabla de dispositivos */}
-          <Card className="bg-[#1f2937] border-[#374151] text-white">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <span>Dispositivos</span>
-                <span className="ml-2 text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-                  {deviceStats.total} total
-                </span>
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Listado detallado de dispositivos del parque solar
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DeviceTable plantId={plantId} />
-            </CardContent>
-          </Card>
-          
-          {/* Componente de Mediciones Adicionales */}
-          <AdditionalMonitor plantId={plantId} />
+          <DevicesTab 
+            plantId={plantId}
+            deviceStats={deviceStats}
+          />
         </TabsContent>
         
-        <TabsContent value="generation" className="space-y-6">
-          {/* Gráfico de generación mensual */}
-          <Card className="bg-[#1f2937] border-[#374151] text-white">
-            <CardHeader>
-              <CardTitle>Generación Mensual</CardTitle>
-              <CardDescription className="text-gray-400">
-                Energía generada por mes
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={energyHistory.monthly}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="month" stroke="#718096" />
-                    <YAxis stroke="#718096" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#111928', 
-                        border: '1px solid #374151',
-                        color: 'white'
-                      }}
-                      labelStyle={{ color: '#a0aec0' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="energy" 
-                      stroke="#4a4ae2" 
-                      strokeWidth={2}
-                      name="Energía (MWh)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-          
-          {/* Componente de Mediciones Adicionales */}
-          <AdditionalMonitor plantId={plantId} />
+        {/* Contenido de Monitoreo Avanzado */}
+        <TabsContent value="advanced" className="space-y-6">
+          <AdvancedTab plantId={plantId} />
         </TabsContent>
       </Tabs>
     </div>

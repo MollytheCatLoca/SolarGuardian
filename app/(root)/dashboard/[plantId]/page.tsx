@@ -3,6 +3,7 @@ import { getPlantById } from "@/lib/services/plantService";
 import { getGenerationMetricsByPlantId } from "@/lib/services/measurementService";
 import { getAlarmStatistics } from "@/lib/services/alarmService";
 import { getMaintenanceStatistics } from "@/lib/services/maintenanceService";
+
 import SolarDashboard from "@/components/solar/SolarDashboard";
 import { redirect } from "next/navigation";
 
