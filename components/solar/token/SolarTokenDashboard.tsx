@@ -39,9 +39,7 @@ import {
 
 // Import the token service
 
-import { tokenService } from '@/lib/services/solarTokenService';
-import {  TokenMarketData } from '@/lib/services/solarTokenService';
-import { PlantFinanceData, TokenGenerationRecord, TokenTransaction, TokenPortfolio } from '@/lib/services/solarTokenService';
+import { tokenService } from '@/lib/services/SolarTokenService';
 
 
 // Main component
