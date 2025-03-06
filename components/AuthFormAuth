@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,29 +29,6 @@ import { signIn, signUp } from "@/lib/actions/user.actions";
 const AuthForm = ({ type }: { type: string }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [uiActive, setUiActive] = useState(true);
-
-  // Efecto para diagnosticar congelamiento de UI
-  useEffect(() => {
-    console.log("AuthForm montado - perfil de Chrome:", navigator.userAgent);
-    console.log("Cookies disponibles:", document.cookie ? "Sí" : "No");
-    
-    // Verificar si hay una sesión previa
-    const hasAppwriteSession = document.cookie.includes('appwrite-session');
-    console.log("Sesión Appwrite detectada:", hasAppwriteSession);
-
-    // Heartbeat para detectar congelamiento de UI
-    const interval = setInterval(() => {
-      console.log("UI activa - " + new Date().toISOString());
-      setUiActive(prev => !prev); // Toggle para forzar actividad en el componente
-    }, 2000);
-
-    return () => {
-      console.log("AuthForm desmontado");
-      clearInterval(interval);
-    };
-  }, []);
 
   // 1. Build the Zod schema depending on sign-up or sign-in
   const formSchema = authFormSchema(type);
@@ -68,14 +45,9 @@ const AuthForm = ({ type }: { type: string }) => {
   // 3. Define the submit handler
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true);
-    setAuthError(null);
-    
-    console.log("Iniciando proceso de autenticación:", type);
-    console.log("Timestamp:", new Date().toISOString());
 
     try {
       if (type === "sign-up") {
-        console.log("Procesando registro...");
         const userData = {
           firstName: data.firstName!,
           lastName: data.lastName!,
@@ -89,70 +61,29 @@ const AuthForm = ({ type }: { type: string }) => {
           password: data.password,
         };
 
-        console.log("Llamando a API de signUp");
         const newUser = await signUp(userData);
-        console.log("Respuesta de API recibida:", !!newUser);
-        
         if (newUser) {
-          console.log("Registro exitoso, redirigiendo...");
-          // Añadimos un pequeño timeout para asegurar que los logs sean visibles
-          setTimeout(() => {
-            router.push("/dashboard");
-          }, 500);
-        } else {
-          setAuthError("Error al crear cuenta. Por favor intente nuevamente.");
+          // Redirect immediately on successful sign-up
+          router.push("/dashboard");
         }
       }
 
       if (type === "sign-in") {
-        console.log("Procesando inicio de sesión...");
-        console.log("Datos:", { email: data.email, password: "***" });
-        
-        try {
-          console.log("Llamando a API de signIn");
-          const startTime = performance.now();
-          
-          const response = await signIn({
-            email: data.email,
-            password: data.password,
-          });
-          
-          const endTime = performance.now();
-          console.log(`Tiempo de respuesta API: ${endTime - startTime}ms`);
-          console.log("Respuesta de API recibida:", !!response);
+        const response = await signIn({
+          email: data.email,
+          password: data.password,
+        });
 
-          if (response) {
-            console.log("Inicio de sesión exitoso, verificando cookies...");
-            console.log("Cookies después de login:", document.cookie ? "Presentes" : "No presentes");
-            
-            // Añadimos un pequeño timeout para asegurar que los logs sean visibles
-            setTimeout(() => {
-              console.log("Redirigiendo al dashboard...");
-              router.replace("/dashboard"); // Usamos replace en lugar de push
-            }, 500);
-          } else {
-            console.log("No se recibió respuesta de la API");
-            setAuthError("Credenciales incorrectas. Por favor intente nuevamente.");
-          }
-        } catch (signInError) {
-          console.error("Error específico en signIn:", signInError);
-          setAuthError("Error en el proceso de inicio de sesión.");
+        if (response) {
+          // Redirect immediately on successful sign-in
+          router.push("/dashboard");
         }
       }
     } catch (error) {
-      console.error("Error general en autenticación:", error);
-      setAuthError("Ocurrió un error. Por favor intente nuevamente.");
+      console.log(error);
     } finally {
       setIsLoading(false);
-      console.log("Proceso de autenticación finalizado");
     }
-  };
-
-  // Manejo alternativo para casos en que router.push no funcione
-  const handleAlternativeNavigation = (e: React.MouseEvent) => {
-    e.preventDefault();
-    console.log("Utilizando navegación alternativa...");
-    window.location.href = "/dashboard";
   };
 
   return (
@@ -179,17 +110,6 @@ const AuthForm = ({ type }: { type: string }) => {
           </h1>
         </div>
       </header>
-
-      {/* Indicador de estado UI - solo para debugging */}
-      <div className="text-xs text-gray-400 mb-2">
-        UI Active: {uiActive ? "●" : "○"}
-      </div>
-
-      {authError && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-500 text-red-700 rounded-md">
-          {authError}
-        </div>
-      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -275,18 +195,6 @@ const AuthForm = ({ type }: { type: string }) => {
                 </>
               ) : type === "sign-in" ? "Sign In" : "Sign Up"}
             </Button>
-            
-            {/* Botón alternativo para navegación cuando router.push falla */}
-            {authError && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleAlternativeNavigation}
-                className="mt-2"
-              >
-                Ir al Dashboard (Método Alternativo)
-              </Button>
-            )}
           </div>
         </form>
       </Form>

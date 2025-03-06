@@ -46,37 +46,22 @@ export const getUserInfo = async ({ userId }: getUserInfoProps) => {
 
 export const signIn = async ({ email, password }: signInProps) => {
   try {
-    console.log("🔐 Iniciando proceso de autenticación para:", email);
-    
     const { account } = await createAdminClient();
-    
-    // Crear sesión con Appwrite
-    console.log("🔄 Creando sesión en Appwrite...");
     const session = await account.createEmailPasswordSession(email, password);
-    console.log("✅ Sesión creada correctamente:", session.userId);
 
-    // Configuración menos estricta para cookies en entorno de desarrollo
-    // Esto ayuda a evitar problemas con las políticas de cookies en Chrome
-    const isDev = process.env.NODE_ENV !== 'production';
-    console.log("🌐 Entorno:", isDev ? "desarrollo" : "producción");
-    
+    // Configuración menos estricta para desarrollo
     cookies().set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
-      sameSite: isDev ? "lax" : "strict", // Menos estricto en desarrollo
-      secure: !isDev, // No requerir HTTPS en desarrollo
+      sameSite: process.env.NODE_ENV === 'production' ? "strict" : "lax",
+      secure: process.env.NODE_ENV === 'production',
     });
-    
-    console.log("🍪 Cookie establecida con éxito");
 
-    // Obtener información del usuario
-    const user = await getUserInfo({ userId: session.userId });
-    console.log("👤 Información del usuario recuperada:", !!user);
+    const user = await getUserInfo({ userId: session.userId }) 
 
     return parseStringify(user);
   } catch (error) {
-    console.error('❌ Error en proceso de login:', error);
-    throw error; // Re-lanzamos el error para manejarlo en la UI
+    console.error('Error', error);
   }
 }
 
@@ -86,7 +71,6 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
   let newUserAccount;
 
   try {
-    console.log("🔐 Iniciando proceso de registro para:", email);
     const { account, database } = await createAdminClient();
 
     newUserAccount = await account.create(
@@ -107,8 +91,8 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
 
     const dwollaCustomerId = extractCustomerIdFromUrl(dwollaCustomerUrl);
 */
-    const dwollaCustomerUrl = ""
-    const dwollaCustomerId = ""
+const dwollaCustomerUrl = ""
+const dwollaCustomerId = ""
 
     const newUser = await database.createDocument(
       DATABASE_ID!,
@@ -122,73 +106,54 @@ export const signUp = async ({ password, ...userData }: SignUpParams) => {
       }
     )
 
-    // Crear sesión después del registro
-    console.log("🔄 Creando sesión para el nuevo usuario...");
     const session = await account.createEmailPasswordSession(email, password);
 
-    // Configuración menos estricta para cookies en entorno de desarrollo
-    const isDev = process.env.NODE_ENV !== 'production';
-    
     cookies().set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
-      sameSite: isDev ? "lax" : "strict",
-      secure: !isDev,
+      sameSite: "strict",
+      secure: true,
     });
-    
-    console.log("✅ Registro completado con éxito");
 
     return parseStringify(newUser);
   } catch (error) {
-    console.error('❌ Error en proceso de registro:', error);
-    throw error; // Re-lanzamos el error para manejarlo en la UI
+    console.error('Error', error);
   }
 }
 
 export async function getLoggedInUser() {
   try {
-    console.log("🔄 Verificando sesión de usuario...");
     const { account } = await createSessionClient();
-    
     const result = await account.get();
-    console.log("✅ Sesión activa encontrada para:", result.$id);
 
     const user = await getUserInfo({ userId: result.$id})
+
     return parseStringify(user);
   } catch (error) {
-    console.log("⚠️ No hay sesión activa o ocurrió un error:", error)
+    console.log(error)
     return null;
   }
 }
 
 export const logoutAccount = async () => {
   try {
-    console.log("🚪 Iniciando cierre de sesión...");
     const { account } = await createSessionClient();
 
-    // Eliminar la cookie explícitamente con opciones adaptativas
-    const isDev = process.env.NODE_ENV !== 'production';
-    
+    // Eliminar la cookie explícitamente con las mismas opciones
     cookies().delete('appwrite-session', {
       path: "/",
-      sameSite: isDev ? "lax" : "strict",
-      secure: !isDev,
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === 'production' ? "strict" : "lax",
+      secure: process.env.NODE_ENV === 'production',
     });
     
-    console.log("🍪 Cookie eliminada");
-
-    // Eliminar la sesión en Appwrite
+    // Eliminar sesión actual
     await account.deleteSession('current');
-    console.log("✅ Sesión eliminada correctamente");
-    
-    return true;
   } catch (error) {
-    console.error("❌ Error al cerrar sesión:", error);
-    return false;
+    return null;
   }
 }
 
-// El resto del código se mantiene igual...
 export const createLinkToken = async (user: User) => {
   try {
     const tokenParams = {

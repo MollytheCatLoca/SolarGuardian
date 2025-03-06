@@ -1,4 +1,5 @@
-// context/PlantContext.tsx
+"use client";
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { getUserPlants } from '@/lib/services/plantService';
 import { Plant } from '@/types/plantTypes';
@@ -26,7 +27,7 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         // Si es admin (clientId = 0), obtiene todas las plantas
         // De lo contrario, obtiene solo las plantas asociadas al cliente
-        const userPlants = await getUserPlants(user.clientId);
+        const userPlants = await getUserPlants(user?.clientId || 0);
         
         setPlants(userPlants);
         
@@ -42,7 +43,7 @@ export const PlantProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
     
     loadPlants();
-  }, []);
+  }, [selectedPlant]);
 
   const selectPlant = (plant: Plant) => {
     setSelectedPlant(plant);

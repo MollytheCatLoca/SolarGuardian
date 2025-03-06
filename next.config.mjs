@@ -18,7 +18,7 @@ const nextConfig = {
     // Will be available on both server and client
     apiTimeout: 30000, // 30 seconds
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   webpack: (config, { isServer, dev }) => {
     if (isServer) {
       config.externals = [

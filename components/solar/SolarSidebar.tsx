@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -73,26 +73,61 @@ export default function SolarSidebar({ user }) {
   const pathname = usePathname();
   const router = useRouter();
   const [plantId, setPlantId] = useState(null);
+  const [sidebarItems, setSidebarItems] = useState([]);
   
-  // Extraer el ID de la planta de la URL
-  useEffect(() => {
+  // Extraer el ID de la planta de la URL - usando useCallback para evitar recreaciones
+  const extractPlantId = useCallback(() => {
     // Buscamos un patrón en la URL como /dashboard/1/...
-    const match = pathname.match(/\/dashboard\/(\d+)/);
+    const match = pathname?.match(/\/dashboard\/(\d+)/);
     if (match && match[1]) {
-      setPlantId(match[1]);
-    } else {
-      setPlantId(null);
+      return match[1];
     }
+    return null;
   }, [pathname]);
   
-  // Obtener los elementos del sidebar con las rutas adecuadas
-  const sidebarItems = createSidebarItems(plantId);
+  // Actualizar plantId y elementos del sidebar cuando cambia la URL
+  useEffect(() => {
+    if (pathname) {
+      const newPlantId = extractPlantId();
+      
+      // Solo actualizar si realmente cambió para evitar re-renderizados innecesarios
+      if (newPlantId !== plantId) {
+        setPlantId(newPlantId);
+      }
+    }
+  }, [pathname, extractPlantId, plantId]);
   
-  // Función para cerrar sesión
+  // Actualizar elementos del sidebar cuando cambia plantId
+  useEffect(() => {
+    // Usar esto en lugar de calcular los elementos en cada render
+    setSidebarItems(createSidebarItems(plantId));
+  }, [plantId]);
+  
+  // Función mejorada para cerrar sesión
   const handleLogOut = async () => {
-    const loggedOut = await logoutAccount();
-    if(loggedOut) router.push('/sign-in');
+    try {
+      const loggedOut = await logoutAccount();
+      if (loggedOut) {
+        // Usar replace en lugar de push para evitar problemas de historial
+        router.replace('/sign-in');
+      }
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
+  
+  // Función para determinar si una ruta está activa
+  const isRouteActive = useCallback((itemPath) => {
+    if (!pathname) return false;
+    
+    // Evitar coincidencias parciales problemáticas
+    if (itemPath === '/dashboard' && plantId) {
+      return pathname === `/dashboard/${plantId}`;
+    }
+    
+    return pathname === itemPath || 
+           (itemPath !== '/dashboard' && pathname.startsWith(`${itemPath}/`));
+  }, [pathname, plantId]);
   
   return (
     <div className="w-64 h-full bg-[#111928] border-r border-[#1f2937] flex flex-col">
@@ -104,6 +139,7 @@ export default function SolarSidebar({ user }) {
             alt="SolarGuardian Logo"
             width={40}
             height={40}
+            priority={true}
           />
         </div>
         <div>
@@ -113,15 +149,16 @@ export default function SolarSidebar({ user }) {
       </div>
       
       {/* Navigation */}
-      <nav className="flex-1 px-4 mt-6">
+      <nav className="flex-1 px-4 mt-6 overflow-y-auto">
         <ul className="space-y-2">
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.path || pathname.startsWith(`${item.path}/`);
+            const isActive = isRouteActive(item.path);
             
             return (
               <li key={item.id}>
                 <Link
                   href={item.path}
+                  prefetch={false} // Evitar prefetching agresivo que puede causar problemas
                   className={cn(
                     "flex items-center w-full px-4 py-3 text-sm font-medium rounded-lg transition-colors",
                     isActive
@@ -156,8 +193,9 @@ export default function SolarSidebar({ user }) {
           </div>
           <button 
             onClick={handleLogOut}
-            className="text-gray-400 hover:text-white"
+            className="text-gray-400 hover:text-white p-2 rounded-full"
             aria-label="Cerrar sesión"
+            type="button"
           >
             <LogOut size={18} />
           </button>
