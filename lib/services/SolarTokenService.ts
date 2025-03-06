@@ -80,16 +80,16 @@ export interface PlantFinanceData {
 }
 
 // SolarToken Service to fetch token data
-export class SolarTokenService {
-  private static instance: SolarTokenService;
+class SolarTokenService {
+  private static instance: SolarTokenService | null = null;
   private walletAddress: string = '0x742d35Cc6634C0532925a3b844Bc454e4438f44e';
   
   // Mock data for development
   private mockGenerationData: TokenGenerationRecord[] = [];
   private mockTransactions: TokenTransaction[] = [];
-  private mockMarketData: TokenMarketData;
-  private mockPortfolio: TokenPortfolio;
-  private mockPlantFinance: PlantFinanceData;
+  private mockMarketData: TokenMarketData | null = null;
+  private mockPortfolio: TokenPortfolio | null = null;
+  private mockPlantFinance: PlantFinanceData | null = null;
   
   private constructor() {
     this.initializeMockData();
@@ -103,11 +103,15 @@ export class SolarTokenService {
   }
   
   private initializeMockData(): void {
-    this.generateMockGenerationData();
-    this.generateMockTransactions();
-    this.generateMockMarketData();
-    this.generateMockPortfolio();
-    this.generateMockFinanceData();
+    try {
+      this.generateMockGenerationData();
+      this.generateMockTransactions();
+      this.generateMockMarketData();
+      this.generateMockPortfolio();
+      this.generateMockFinanceData();
+    } catch (error) {
+      console.error("Error initializing mock data:", error);
+    }
   }
   
   private generateMockGenerationData(): void {
@@ -221,7 +225,6 @@ export class SolarTokenService {
   private generateMockMarketData(): void {
     // Generate price history data for the last 7 days
     const priceHistory = [];
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const basePrice = 0.25;
     
     for (let i = 0; i < 7; i++) {
@@ -337,6 +340,10 @@ export class SolarTokenService {
   }
   
   private generateMockPortfolio(): void {
+    if (!this.mockMarketData) {
+      throw new Error("Market data must be generated before portfolio");
+    }
+    
     // Calculate total balance from transactions
     const mintedTokens = this.mockTransactions
       .filter(tx => tx.type === 'mint' && tx.toAddress === this.walletAddress)
@@ -441,6 +448,9 @@ export class SolarTokenService {
    */
   async getMarketData(): Promise<TokenMarketData> {
     // In a real implementation, this would make an API call to a token exchange
+    if (!this.mockMarketData) {
+      throw new Error("Market data not initialized");
+    }
     return this.mockMarketData;
   }
   
@@ -449,6 +459,9 @@ export class SolarTokenService {
    */
   async getPortfolio(): Promise<TokenPortfolio> {
     // In a real implementation, this would make a blockchain API call
+    if (!this.mockPortfolio) {
+      throw new Error("Portfolio not initialized");
+    }
     return this.mockPortfolio;
   }
   
@@ -457,6 +470,9 @@ export class SolarTokenService {
    */
   async getPlantFinanceData(plantId: number): Promise<PlantFinanceData> {
     // In a real implementation, this would make an API call
+    if (!this.mockPlantFinance) {
+      throw new Error("Plant finance data not initialized");
+    }
     return this.mockPlantFinance;
   }
   
@@ -464,6 +480,10 @@ export class SolarTokenService {
    * Mint new tokens based on energy production
    */
   async mintTokens(plantId: number, energyKWh: number): Promise<TokenTransaction> {
+    if (!this.mockMarketData || !this.mockPortfolio) {
+      throw new Error("Market data or portfolio not initialized");
+    }
+    
     // In a real implementation, this would make a blockchain transaction
     const newTokens: TokenTransaction = {
       id: `tx-mint-${Date.now()}`,
@@ -503,11 +523,13 @@ export class SolarTokenService {
     this.mockPortfolio.allocation.inWallet += energyKWh;
     
     // Update the plant finance data
-    this.mockPlantFinance.tokenValueGenerated += newGeneration.valueUSD;
-    this.mockPlantFinance.capexPaidToDate = Math.min(
-      this.mockPlantFinance.tokenValueGenerated,
-      this.mockPlantFinance.initialCapex
-    );
+    if (this.mockPlantFinance) {
+      this.mockPlantFinance.tokenValueGenerated += newGeneration.valueUSD;
+      this.mockPlantFinance.capexPaidToDate = Math.min(
+        this.mockPlantFinance.tokenValueGenerated,
+        this.mockPlantFinance.initialCapex
+      );
+    }
     
     return newTokens;
   }
@@ -516,6 +538,10 @@ export class SolarTokenService {
    * Buy tokens on the market
    */
   async buyTokens(amount: number, price: number): Promise<TokenTransaction> {
+    if (!this.mockMarketData || !this.mockPortfolio) {
+      throw new Error("Market data or portfolio not initialized");
+    }
+    
     // In a real implementation, this would make a blockchain transaction
     const totalValue = amount * price;
     const newTransaction: TokenTransaction = {
@@ -546,6 +572,10 @@ export class SolarTokenService {
    * Sell tokens on the market
    */
   async sellTokens(amount: number, price: number): Promise<TokenTransaction> {
+    if (!this.mockMarketData || !this.mockPortfolio) {
+      throw new Error("Market data or portfolio not initialized");
+    }
+    
     // Check if user has enough tokens
     if (this.mockPortfolio.balance < amount) {
       throw new Error("Insufficient token balance");
@@ -582,6 +612,10 @@ export class SolarTokenService {
    * Transfer tokens to another address
    */
   async transferTokens(toAddress: string, amount: number): Promise<TokenTransaction> {
+    if (!this.mockMarketData || !this.mockPortfolio) {
+      throw new Error("Market data or portfolio not initialized");
+    }
+    
     // Check if user has enough tokens
     if (this.mockPortfolio.balance < amount) {
       throw new Error("Insufficient token balance");
