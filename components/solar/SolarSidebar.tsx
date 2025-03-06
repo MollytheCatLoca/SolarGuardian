@@ -14,7 +14,8 @@ import {
   BarChart3,
   Settings,
   Wrench,
-  LogOut
+  LogOut,
+  Key
 } from 'lucide-react';
 
 // Función para crear elementos de la barra lateral con rutas dinámicas
@@ -64,6 +65,12 @@ const createSidebarItems = (plantId) => {
       label: 'Configuración',
       icon: <Settings size={20} />,
       path: `${basePath}/settings`
+    },
+    {
+      id: 'tokens',
+      label: 'Tokens',
+      icon: <Key size={20} />,
+      path: `${basePath}/tokens`
     }
   ];
 };
