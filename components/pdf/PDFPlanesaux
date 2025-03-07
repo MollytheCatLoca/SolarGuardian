@@ -1,0 +1,526 @@
+
+{/* Página 9: Planes y Precios */}
+<PDFPage pageNumber={9} totalPages={totalPages} title="Planes">
+  <PDFSection sectionTitle="Planes y Licenciamiento">
+    <div style={{ 
+      padding: '20px',
+    }}>
+      <div style={{
+        backgroundColor: 'rgba(17, 25, 40, 0.8)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.125)',
+        padding: '20px',
+        marginBottom: '20px',
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '20px',
+        }}>
+          {/* Plan Básico */}
+          <div style={{
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              color: 'white', 
+              fontWeight: 'bold',
+              marginBottom: '8px',
+            }}>
+              Plan Básico
+            </h3>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#d1d5db', 
+              marginBottom: '15px' 
+            }}>
+              Para parques solares pequeños
+            </p>
+            <div style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: 'white',
+              marginBottom: '20px',
+            }}>
+              <span style={{ color: '#8a3ab4' }}>$</span> 399
+              <span style={{ 
+                fontSize: '14px', 
+                fontWeight: 'normal', 
+                color: '#d1d5db' 
+              }}>/mes</span>
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <ul style={{ 
+                listStyleType: 'none', 
+                padding: 0, 
+                margin: 0,
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Hasta 2MW de capacidad
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Monitoreo básico
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Alertas esenciales
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Informes mensuales
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  2 usuarios
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Plan Profesional */}
+          <div style={{
+            borderRadius: '8px',
+            border: '2px solid #8a3ab4',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+            boxShadow: '0 0 20px rgba(138, 58, 180, 0.3)',
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: '-12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#8a3ab4',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: '12px',
+              fontSize: '10px',
+              fontWeight: 'bold',
+            }}>
+              RECOMENDADO
+            </div>
+            
+            <h3 style={{ 
+              fontSize: '18px', 
+              color: 'white', 
+              fontWeight: 'bold',
+              marginBottom: '8px',
+            }}>
+              Plan Profesional
+            </h3>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#d1d5db', 
+              marginBottom: '15px' 
+            }}>
+              Para parques solares medianos
+            </p>
+            <div style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: 'white',
+              marginBottom: '20px',
+            }}>
+              <span style={{ color: '#8a3ab4' }}>$</span> 899
+              <span style={{ 
+                fontSize: '14px', 
+                fontWeight: 'normal', 
+                color: '#d1d5db' 
+              }}>/mes</span>
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <ul style={{ 
+                listStyleType: 'none', 
+                padding: 0, 
+                margin: 0,
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Hasta 10MW de capacidad
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Monitoreo avanzado
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Sistema completo de alertas
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Mantenimiento predictivo
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  5 usuarios
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Plan Enterprise */}
+          <div style={{
+            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <h3 style={{ 
+              fontSize: '18px', 
+              color: 'white', 
+              fontWeight: 'bold',
+              marginBottom: '8px',
+            }}>
+              Plan Enterprise
+            </h3>
+            <p style={{ 
+              fontSize: '12px', 
+              color: '#d1d5db', 
+              marginBottom: '15px' 
+            }}>
+              Para grandes instalaciones
+            </p>
+            <div style={{ 
+              fontSize: '24px', 
+              fontWeight: 'bold', 
+              color: 'white',
+              marginBottom: '20px',
+            }}>
+              <span style={{ color: '#8a3ab4' }}>Personalizado</span>
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <ul style={{ 
+                listStyleType: 'none', 
+                padding: 0, 
+                margin: 0,
+                marginBottom: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Capacidad ilimitada
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Módulo de tokenización
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Integraciones personalizadas
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Soporte 24/7 prioritario
+                </li>
+                <li style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '12px',
+                  color: '#d1d5db',
+                }}>
+                  <span style={{ 
+                    color: '#8a3ab4',
+                    marginRight: '8px', 
+                    fontWeight: 'bold' 
+                  }}>✓</span>
+                  Usuarios ilimitados
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style={{
+        backgroundColor: 'rgba(17, 25, 40, 0.8)',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.125)',
+        padding: '20px',
+      }}>
+        <h3 style={{ 
+          fontSize: '18px', 
+          fontWeight: 'bold', 
+          color: '#8a3ab4', 
+          marginBottom: '15px',
+          textAlign: 'center', 
+        }}>
+          Opciones Adicionales
+        </h3>
+        
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '15px',
+        }}>
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            padding: '15px',
+            textAlign: 'center',
+          }}>
+            <h4 style={{ 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+              marginBottom: '8px',
+            }}>
+              Implementación
+            </h4>
+            <p style={{ 
+              color: '#d1d5db', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+            }}>
+              Servicio de configuración inicial
+            </p>
+            <p style={{ 
+              color: '#8a3ab4', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+            }}>
+              Desde $2,500
+            </p>
+          </div>
+          
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            padding: '15px',
+            textAlign: 'center',
+          }}>
+            <h4 style={{ 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+              marginBottom: '8px',
+            }}>
+              Capacitación
+            </h4>
+            <p style={{ 
+              color: '#d1d5db', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+            }}>
+              Entrenamiento para equipos
+            </p>
+            <p style={{ 
+              color: '#8a3ab4', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+            }}>
+              $1,200 / sesión
+            </p>
+          </div>
+          
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            padding: '15px',
+            textAlign: 'center',
+          }}>
+            <h4 style={{ 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+              marginBottom: '8px',
+            }}>
+              Soporte Premium
+            </h4>
+            <p style={{ 
+              color: '#d1d5db', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+            }}>
+              Asistencia técnica prioritaria
+            </p>
+            <p style={{ 
+              color: '#8a3ab4', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+            }}>
+              +20% mensual
+            </p>
+          </div>
+          
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            padding: '15px',
+            textAlign: 'center',
+          }}>
+            <h4 style={{ 
+              color: 'white', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+              marginBottom: '8px',
+            }}>
+              Integraciones
+            </h4>
+            <p style={{ 
+              color: '#d1d5db', 
+              fontSize: '12px', 
+              marginBottom: '8px',
+            }}>
+              Conexión con sistemas externos
+            </p>
+            <p style={{ 
+              color: '#8a3ab4', 
+              fontWeight: 'bold', 
+              fontSize: '14px',
+            }}>
+              Consultar
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </PDFSection>
+</PDFPage>
