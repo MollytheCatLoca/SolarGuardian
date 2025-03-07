@@ -3,6 +3,7 @@ import { getLoggedInUser } from "@/lib/actions/user.actions";
 import SolarSidebar from "@/components/solar/SolarSidebar";
 import SolarHeader from "@/components/solar/SolarHeader";
 import SolarMobileNav from "@/components/solar/SolarMobileNav";
+import { Analytics } from "@vercel/analytics/react";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import "./bankCSS.css";
@@ -42,6 +43,7 @@ export default async function DashboardLayout({
         {/* Contenido de la página */}
         <div className="flex-1 overflow-auto">
           {children}
+          <Analytics />
         </div>
       </div>
     </main>
