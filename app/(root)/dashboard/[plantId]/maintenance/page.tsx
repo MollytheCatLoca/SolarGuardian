@@ -302,31 +302,32 @@ export default function MaintenancePage() {
             </Card>
             
             {/* Próxima tarea */}
-            <Card className="bg-[#1f2937] border-[#374151] text-white">
-              <CardContent className="pt-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm text-gray-400">Próxima tarea</p>
-                    <h2 className="text-lg font-bold truncate">
-                      {loading.pending ? (
-                        <span className="text-gray-400">Cargando...</span>
-                      ) : pendingTasks.length > 0 ? (
-                        pendingTasks[0].title
-                      ) : (
-                        'No hay tareas'
-                      )}
-                    </h2>
-                    <p className="text-xs text-yellow-400 mt-1">
-                      {!loading.pending && pendingTasks.length > 0 && 
-                        format(parseISO(pendingTasks[0].scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
-                    </p>
-                  </div>
-                  <div className="p-3 rounded-full bg-[#111928]">
-                    <CalendarClock size={24} className="text-yellow-400" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+           {/* Próxima tarea */}
+<Card className="bg-[#1f2937] border-[#374151] text-white">
+<CardContent className="pt-6">
+  <div className="flex justify-between items-start">
+    <div className="max-w-[75%] overflow-hidden">
+      <p className="text-sm text-gray-400 flex">Próxima tarea</p>
+      <h2 className="text-lg font-bold truncate">
+        {loading.pending ? (
+          <span className="text-gray-400">Cargando...</span>
+        ) : pendingTasks.length > 0 ? (
+          pendingTasks[0].title
+        ) : (
+          'No hay tareas'
+        )}
+      </h2>
+      <p className="text-xs text-yellow-400 mt-1 truncate">
+        {!loading.pending && pendingTasks.length > 0 && 
+          format(parseISO(pendingTasks[0].scheduledDate), "dd/MM/yyyy HH:mm", { locale: es })}
+      </p>
+    </div>
+    <div className="p-3 rounded-full bg-[#111928]">
+      <CalendarClock size={24} className="text-yellow-400" />
+    </div>
+  </div>
+</CardContent>
+</Card>
             
             {/* Estadísticas por prioridad */}
             <Card className="bg-[#1f2937] border-[#374151] text-white">
