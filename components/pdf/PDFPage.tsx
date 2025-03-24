@@ -92,7 +92,10 @@ const PDFPage: React.FC<PDFPageProps> = ({ children, pageNumber, totalPages, tit
       color: 'white',
       fontSize: '10px',
     }}>
-      <span style={{ fontSize: '14px',color: '#8a3ab4' }}>BIS Integraciones</span>
+    <div style={{ textAlign: 'right' }}>
+   
+    <p style={{ fontSize: '14px', color: '#8a3ab4', margin: 0 }}>© 2025 BIS Integraciones</p>
+  </div>
       <div>
         <span style={{ fontSize: '12px' }}>www.bisintegraciones.com/energy</span>
         <span style={{ margin: '0 10px', color: '#8a3ab4', fontWeight: 'bold', fontSize: '14px' , paddingLeft: '10px', paddingRight: '10px'}}>solarguardian.pro</span>

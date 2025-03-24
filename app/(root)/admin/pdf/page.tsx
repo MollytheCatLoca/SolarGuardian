@@ -20,6 +20,13 @@ const PDFIndexPage = () => {
       description: 'Soluciones solares integradas para plazas y espacios públicos sostenibles',
       color: 'from-green-600 to-blue-600',
       path: '/admin/pdf/eco-parque'
+    },
+    {
+      id: 'bis-allinone',
+      title: 'BIS AllInOne - Generación Distribuida',
+      description: 'Parques solares integrados y soluciones de leasing energético para empresas y municipios',
+      color: 'from-blue-600 to-indigo-600',
+      path: '/admin/pdf/bis-allinone'
     }
   ];
 
