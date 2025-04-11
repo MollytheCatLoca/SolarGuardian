@@ -3,6 +3,47 @@
 import React from 'react';
 import { Sun, Building2, Home, ArrowDownUp, Globe, ChevronUp } from 'lucide-react';
 
+// Benefits data as constants for easy editing
+const KEY_BENEFITS = [
+  {
+    title: "Ahorro inmediato y sostenido",
+    description: "Reduce tus costos energéticos entre un 15% y un 25% desde el primer mes.",
+    icon: <ChevronUp size={9} className="text-[#10b981]" />
+  },
+  {
+    title: "Blindaje ante aumentos tarifarios",
+    description: "Protección frente a subas futuras y fin de subsidios: previsibilidad total en el gasto energético.",
+    icon: <ChevronUp size={9} className="text-[#10b981]" />
+  },
+  {
+    title: "Calidad energética garantizada",
+    description: "Estabilidad en el suministro y tensión controlada, incluso en redes sobrecargadas.",
+    icon: <ChevronUp size={9} className="text-[#10b981]" />
+  },
+  {
+    title: "Menor huella ambiental",
+    description: "Disminución de hasta un 90% en emisiones de CO₂ con generación limpia y local.",
+    icon: <ChevronUp size={9} className="text-[#10b981]" />
+  }
+];
+
+
+// Argentina regions stats
+const ARGENTINA_STATS = [
+  {
+    value: "2100+",
+    description: "kWh/m²/año"
+  },
+  {
+    value: "60%",
+    description: "más que Alemania"
+  },
+  {
+    value: "2x",
+    description: "ROI potencial"
+  }
+];
+
 const BISGeneracionDistribuida = () => {
   // Constantes del manual de estilos
   const SPACING = 10; // Espaciado estándar
@@ -18,7 +59,7 @@ const BISGeneracionDistribuida = () => {
   // Alturas base para cada componente individual (en píxeles)
   const HEADER_HEIGHT = 90; // Altura para el encabezado
   const CARD_LEFT_HEIGHT = 372; // Altura para tarjeta izquierda
-  const DIAGRAM_HEIGHT = 200; // Altura para la imagen del diagrama
+  const DIAGRAM_HEIGHT = 210; // Altura para la imagen del diagrama
   const BENEFITS_HEIGHT = 150; // Altura para la sección de beneficios
   const CARD_RIGHT_TOP_HEIGHT = 178; // Altura para tarjeta superior derecha
   const CARD_RIGHT_BOTTOM_HEIGHT = 162; // Altura para tarjeta inferior derecha
@@ -38,7 +79,7 @@ const BISGeneracionDistribuida = () => {
   };
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-[#072235] via-[#051c2c] to-[#03111c] text-white p-4 overflow-hidden">
+    <div className="relative w-full h-full bg-gradient-to-br from-[#072235] via-[#051c2c] to-[#03111c] text-white p-4 overflow-hidden ">
       {/* Fondo y efectos decorativos */}
       <div className="absolute inset-0 z-0">
         {/* Manchas de color */}
@@ -56,7 +97,7 @@ const BISGeneracionDistribuida = () => {
       </div>
 
       {/* Contenedor central para limitar el ancho y centrar el contenido */}
-      <div className="relative z-10 flex flex-col h-full max-w-6xl mx-auto">
+      <div className="relative z-10 flex flex-col h-full max-w-6xl mx-auto mr-4">
         {/* Header */}
         <div className="mb-3" style={{ height: getScaledHeight(HEADER_HEIGHT) }}>
           <div className="inline-block px-3 py-1 bg-[rgba(16,185,129,0.2)] backdrop-blur-sm rounded-full mb-2 border border-[rgba(16,185,129,0.15)]">
@@ -102,9 +143,9 @@ const BISGeneracionDistribuida = () => {
                 {/* Diagrama */}
                 <div
                   className="relative bg-[rgba(16,185,129,0.02)] rounded-[6px] overflow-hidden flex justify-center items-center flex-none"
-                  style={{ padding: "12px", height: getScaledHeight(DIAGRAM_HEIGHT, CARD_LEFT_SCALE) }}
+                  style={{ padding: "-20px", height: getScaledHeight(DIAGRAM_HEIGHT, CARD_LEFT_SCALE) }}
                 >
-                  <div className="relative w-full h-full flex justify-center items-center">
+                  <div className="relative w-[270px] h-full flex justify-self-auto items-center">
                     <img
                       src="/solar-gendis.png"
                       alt="Diagrama de Generación Distribuida"
@@ -112,65 +153,28 @@ const BISGeneracionDistribuida = () => {
                     />
                   </div>
                   <div className="absolute top-3 right-3 bg-gradient-to-r from-[rgba(16,185,129,0.72)] to-[rgba(16,185,109,0.19)] backdrop-blur-md p-[4px_6px] rounded-[4px] text-[9px] border border-[rgba(16,185,129,0.3)] shadow-md">
-                    <p className="text-white m-0">Energia Descentralizada</p>
+                    <p className="text-white m-0"> Descentralizada</p>
                   </div>
                 </div>
-                {/* Beneficios */}
+                {/* Beneficios - Using map for key benefits */}
                 <div className="mt-2 flex-1" style={{ minHeight: getScaledHeight(BENEFITS_HEIGHT, CARD_LEFT_SCALE) }}>
                   <h4 className="text-[13px] font-[700] text-[#34d399] mb-[4px]">Beneficios clave:</h4>
                   <div className="space-y-1">
-                    <div className="flex items-start gap-[6px]">
-                      <div className="mt-[2px] h-4 w-4 rounded-full bg-[rgba(16,185,129,0.2)] flex items-center justify-center flex-shrink-0">
-                        <ChevronUp size={9} className="text-[#10b981]" />
+                    {KEY_BENEFITS.map((benefit, index) => (
+                      <div key={index} className="flex items-start gap-[6px]">
+                        <div className="mt-[2px] h-4 w-4 rounded-full bg-[rgba(16,185,129,0.2)] flex items-center justify-center flex-shrink-0">
+                          {benefit.icon}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium text-[#d1fae5] mt-1 leading-[1.2]">
+                            {benefit.title}
+                          </p>
+                          <p className="text-[8px] text-[rgba(224,242,254,0.7)] m-0">
+                            {benefit.description}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-[#d1fae5] m-0 leading-[1.2]">
-                          Reducción de costos de transmisión
-                        </p>
-                        <p className="text-[8px] text-[rgba(224,242,254,0.7)] m-0">
-                          Ahorro del 15-25% en costos operativos energéticos
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-[6px]">
-                      <div className="mt-[2px] h-4 w-4 rounded-full bg-[rgba(16,185,129,0.2)] flex items-center justify-center flex-shrink-0">
-                        <ChevronUp size={9} className="text-[#10b981]" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-[#d1fae5] m-0 leading-[1.2]">
-                          Mayor estabilidad del suministro
-                        </p>
-                        <p className="text-[8px] text-[rgba(224,242,254,0.7)] m-0">
-                          Reducción de interrupciones &gt;65% en zonas críticas
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-[6px]">
-                      <div className="mt-[2px] h-4 w-4 rounded-full bg-[rgba(16,185,129,0.2)] flex items-center justify-center flex-shrink-0">
-                        <ChevronUp size={9} className="text-[#10b981]" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-[#d1fae5] m-0 leading-[1.2]">
-                          Menor impacto ambiental
-                        </p>
-                        <p className="text-[8px] text-[rgba(224,242,254,0.7)] m-0">
-                          Reducción de emisiones CO₂ de hasta 90%
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-[6px]">
-                      <div className="mt-[2px] h-4 w-4 rounded-full bg-[rgba(16,185,129,0.2)] flex items-center justify-center flex-shrink-0">
-                        <ChevronUp size={9} className="text-[#10b981]" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-medium text-[#d1fae5] m-0 leading-[1.2]">
-                          Independencia energética
-                        </p>
-                        <p className="text-[8px] text-[rgba(224,242,254,0.7)] m-0">
-                          Autoabastecimiento de hasta 95% en instalaciones óptimas
-                        </p>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -201,19 +205,17 @@ const BISGeneracionDistribuida = () => {
                   <p className="text-[9px] text-white font-medium">Irradiación solar excepcional en el norte y centro del país</p>
                 </div>
               </div>
-                <div className="grid grid-cols-3 gap-4" style={{ height: "10%" }}>
-                <div className="bg-gradient-to-br from-[rgba(16,185,129,0.2)] to-[rgba(6,95,70,0.2)] rounded-[6px] text-center border border-[rgba(16,185,129,0.15)] shadow-sm flex flex-col justify-center  p-0.5 ">
-                  <p className="text-[14px] font-bold text-[#10b981] m-0">2100+</p>
-                  <p className="text-[8px] text-[rgba(224,242,254,0.9)] m-0">kWh/m²/año</p>
-                </div>
-                <div className="bg-gradient-to-br from-[rgba(16,185,129,0.2)] to-[rgba(6,95,70,0.2)] rounded-[6px] text-center border border-[rgba(16,185,129,0.15)] shadow-sm flex flex-col justify-center p-0.5 ">
-                  <p className="text-[14px] font-bold text-[#10b981] m-0">60%</p>
-                  <p className="text-[8px] text-[rgba(224,242,254,0.9)] m-0">más que Alemania</p>
-                </div>
-                <div className="bg-gradient-to-br from-[rgba(16,185,129,0.2)] to-[rgba(6,95,70,0.2)] rounded-[6px] text-center border border-[rgba(16,185,129,0.15)] shadow-sm flex flex-col justify-center p-0.5">
-                  <p className="text-[14px] font-bold text-[#10b981] m-0">2x</p>
-                  <p className="text-[8px] text-[rgba(224,242,254,0.9)] m-0">ROI potencial</p>
-                </div>
+              <div className="grid grid-cols-3 gap-4" style={{ height: "10%" }}>
+                {/* Using map for Argentina stats */}
+                {ARGENTINA_STATS.map((stat, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-gradient-to-br from-[rgba(16,185,129,0.2)] to-[rgba(6,95,70,0.2)] rounded-[6px] text-center border border-[rgba(16,185,129,0.15)] shadow-sm flex flex-col justify-center p-0.5"
+                  >
+                    <p className="text-[14px] font-bold text-[#10b981] m-0">{stat.value}</p>
+                    <p className="text-[8px] text-[rgba(224,242,254,0.9)] m-0">{stat.description}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -290,9 +292,7 @@ const BISGeneracionDistribuida = () => {
               <p className="text-[11px] text-white m-0 font-medium">
                 La Generación Distribuida representa la mayor oportunidad de transformación energética para Argentina, con un potencial de crecimiento similar al experimentado por Brasil.
               </p>
-              <p className="text-[9px] text-[rgba(224,242,254,0.7)] m-0 mt-1">
-                Estudio realizado por BIS Integraciones | División Energías Renovables
-              </p>
+              
             </div>
           </div>
         </div>

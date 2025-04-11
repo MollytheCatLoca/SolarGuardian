@@ -26,7 +26,7 @@ const BISProblemaEnergetico = () => {
   const COLOR_ALTERNATIVO = "#10b981"; // Esmeralda para impacto positivo
 
   return (
-    <div className="relative w-full h-full bg-gradient-to-br from-[#072235] via-[#051c2c] to-[#03111c] text-white p-4 overflow-hidden">
+    <div className="relative w-full h-full bg-gradient-to-br from-[#072235] via-[#051c2c] to-[#03111c] text-white p-4 overflow-hidden ">
       {/* Efectos de fondo según manual - comprimidos */}
       <div className="absolute inset-0 z-0">
         {/* Manchas de color */}
@@ -73,7 +73,7 @@ const BISProblemaEnergetico = () => {
         </div>
 
         {/* Layout de 2 Columnas (comprimido verticalmente) */}
-        <div className="grid grid-cols-1 md:grid-cols-[55%_45%] gap-3 mb-3 flex-grow">
+        <div className="grid grid-cols-1 md:grid-cols-[55%_45%] gap-3 mb-3 flex-grow mr-2">
           {/* Columna Izquierda: Problemas/Limitaciones */}
           <div className="space-y-2">
             {/* Problema 1: Infraestructura obsoleta - comprimido */}

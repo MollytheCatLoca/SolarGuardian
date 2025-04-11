@@ -41,8 +41,8 @@ const BISAllInOnePDF = () => {
           title="Quiénes Somos"
         >
           <PDFSection sectionTitle="Quiénes Somos">
-            <div className="w-full h-full ml-1 mt-3 scale-90 rounded-lg">
-            <div style={{width: '100%', height: '100%', marginLeft: '40px', marginTop: '10px'}}>
+            <div className="w-full h-full ml-1 mt-3 scale-95 rounded-lg">
+            <div style={{width: '100%', height: '100%', marginLeft: '10px', marginTop: '-20px'}}>
               <BISQuienesSomos />
             </div>
             </div>
@@ -56,7 +56,7 @@ const BISAllInOnePDF = () => {
           title="El Problema Energético"
         >
           <PDFSection sectionTitle="El Problema Energético en Argentina">
-            <div className="w-full h-full ml-1 mt-3 scale-85 rounded-lg">
+            <div className="w-full h-full ml-1 mt-3 scale-90 rounded-lg">
               <BISProblemaEnergetico />
             </div>
           </PDFSection>
@@ -69,7 +69,7 @@ const BISAllInOnePDF = () => {
           title="Generación Distribuida"
         >
           <PDFSection sectionTitle="La Generación Distribuida como Solución">
-            <div className="w-full h-full -ml-1 mt-3 scale-85 rounded-lg">
+            <div className="w-full h-full ml-0 -mt-6 scale-90 rounded-lg">
               <BISGeneracionDistribuida />
             </div>
           </PDFSection>
@@ -82,7 +82,7 @@ const BISAllInOnePDF = () => {
           title="Parques Solares All-in-One"
         >
           <PDFSection sectionTitle="Nuestra Innovación: Parques Solares All-in-One">
-            <div className="w-full h-full ml-1 -mt-8 scale-85 rounded-lg">
+            <div className="w-full h-full ml-1 -mt-8 scale-90 rounded-lg">
               <BISAllInOneInnovacion />
             </div>
           </PDFSection>
@@ -97,7 +97,7 @@ const BISAllInOnePDF = () => {
           title="Beneficios Clave"
         >
           <PDFSection sectionTitle="La Oportunidad del Leasing">
-            <div className="w-full h-full ml-1 mt-3 scale-85 rounded-lg">
+            <div className="w-full h-full ml-2 mt-3 scale-90 rounded-lg">
               <BISBeneficios />
             </div>
           </PDFSection>
@@ -110,7 +110,7 @@ const BISAllInOnePDF = () => {
           title="Clústeres Comunitarios"
         >
           <PDFSection sectionTitle="Clústeres Comunitarios y Articulación Público-Privada">
-            <div className="w-full h-full ml-1 -mt-2 scale-85 rounded-lg">
+            <div className="w-full h-full ml-2 -mt-2 scale-90 rounded-large">
               <BISClusteres />
             </div>
           </PDFSection>
@@ -123,7 +123,7 @@ const BISAllInOnePDF = () => {
           title="Futuro de la GD"
         >
           <PDFSection sectionTitle="El Futuro de la Generación Distribuida en Argentina">
-            <div className="w-full h-full ml-1 -mt-8 scale-85 rounded-lg">
+            <div className="w-full h-full ml-2 -mt-8 scale-90 rounded-lg">
               <BISFuturoGD />
             </div>
           </PDFSection>
@@ -136,7 +136,7 @@ const BISAllInOnePDF = () => {
           title="Solar Guardian Pro"
         >
           <PDFSection sectionTitle="Solar Guardian Pro: Automatización y Optimización">
-            <div className="w-full h-full ml-1 mt-3 scale-85 rounded-lg">
+            <div className="w-full h-full ml-2 mt-2 scale-90 rounded-lg">
               <BISSolarGuardian />
             </div>
           </PDFSection>
@@ -149,7 +149,7 @@ const BISAllInOnePDF = () => {
           title="Verticales de BIS"
         >
           <PDFSection sectionTitle="Verticales de BIS Integraciones">
-            <div className="w-full h-full ml-1 mt-3 scale-85 rounded-lg">
+            <div className="w-full h-full ml-2 mt-3 scale-90 rounded-lg">
               <BISVerticales />
             </div>
           </PDFSection>
@@ -162,7 +162,7 @@ const BISAllInOnePDF = () => {
           title="Cierre"
         >
           <PDFSection sectionTitle="BIS Integraciones: Energía para el futuro">
-            <div className="w-full h-full ml-1 mt-3 scale-90 rounded-lg">
+            <div className="w-full h-full ml-1 mt-3 scale-80 rounded-lg">
               <BISCierre />
             </div>
           </PDFSection>

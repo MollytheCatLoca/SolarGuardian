@@ -29,8 +29,8 @@ const LAYOUT = {
   
   
   // Posiciones
-  tagTop: 20,
-  imageMarginTop: 20,
+  tagTop: 1,
+  imageMarginTop: 10,
   statsMarginTop: 20,
   
   // Animación
@@ -142,15 +142,17 @@ const BISPortada: React.FC = () => {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        paddingTop: '10px',
         justifyContent: 'flex-start',
         textAlign: 'center',
         zIndex: 5,
         marginTop: `${LAYOUT.tagTop}px`,
+        marginBottom: '-5px',
       }}>
         {/* Etiqueta superior con estilo del PDFHero */}
         <div style={{
           display: 'inline-block',
-          padding: '10px 22px',
+          padding: '1px 12px',
           background: `linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(31, 41, 55, 0.95) 100%)`,
           borderRadius: '50px',
           marginBottom: '20px',
@@ -165,9 +167,9 @@ const BISPortada: React.FC = () => {
           {/* Efecto de brillos internos */}
           <div style={{
             position: 'absolute',
-            top: '-60%',
+            top: '-60px',
             left: '-10%',
-            width: '120%',
+            width: '110%',
             height: '200%',
             background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.15) 0%, transparent 60%)',
             zIndex: 0,
@@ -201,13 +203,13 @@ const BISPortada: React.FC = () => {
           <p style={{
             color: '#f8fafc',
             fontWeight: 'bold',
-            fontSize: '14px',
-            margin: 0,
+            fontSize: '12px',
+            margin: 10,
             position: 'relative',
             zIndex: 2,
             letterSpacing: '0.8px',
             textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            transform: 'translateZ(15px)',
+            transform: 'translateZ(10px)',
           }}>
             INNOVACIÓN EN ENERGÍA PARA <span style={{ 
               color: '#8B5CF6', // Color púrpura del tema
@@ -245,6 +247,7 @@ const BISPortada: React.FC = () => {
           fontWeight: 'bold',
           color: 'white',
           marginBottom: '15px',
+          marginTop: '-20px',
           letterSpacing: '-0.5px',
         }}>
           BIS <span style={{ color: LAYOUT.primaryColor }}>Integraciones</span>
@@ -258,8 +261,7 @@ const BISPortada: React.FC = () => {
           margin: '0 auto 20px',
           lineHeight: 1.4,
         }}>
-          Soluciones modulares que combinan generación solar,  
-          infraestructura sostenible y financiamiento innovador
+          Soluciones modulares que integran generación solar avanzada, infraestructura sostenible y mecanismos de financiamiento innovadores
         </p>
         
         {/* Botones de acción con estilo del PDFHero */}

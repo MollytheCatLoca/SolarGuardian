@@ -24,7 +24,7 @@ const ElectricityCostsCard = () => {
   
   // Título y descripción
   const title = "Aumento de costos energéticos";
-  const description = "Tarifas eléctricas industriales se incrementarán hasta un 83% para 2029 con eliminación de subsidios.";
+  const description = "Tarifas eléctricas se podrna incrementar hasta un 80% para 2029. (Subsidios/Dolar)";
 
   // Función para calcular la altura proporcional para el gráfico
   const getBarHeight = (rate) => {

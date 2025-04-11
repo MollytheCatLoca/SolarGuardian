@@ -1,7 +1,95 @@
 "use client"
 
 import React from 'react';
-import { LayoutGrid, TreePine, Droplets, Building, HomeIcon, Cpu, Battery, Signal, Zap, Globe, Shield } from 'lucide-react';
+import { LayoutGrid, TreePine, Droplets, Building, HomeIcon, Cpu, Battery, Signal, Zap, Globe, Shield, Check, Lightbulb, PanelTop, Factory, Hospital, Construction, Sprout } from 'lucide-react';
+
+// Verticals data for easy editing
+const VERTICALS_DATA = [
+  {
+    icon: <TreePine size={16} color="#c4b5fd" />,
+    title: "EcoParques Urbanos",
+    badge: "Plazas Sostenibles",
+    badgeBgColor: "rgba(124, 58, 237, 0.2)",
+    badgeTextColor: "#ddd6fe",
+    description: "Mini y nano parques solares (100kW y 50kW) para infraestructura pública 100% renovable",
+    characteristics: ['MicroHUBs autosuficientes', 'WiFi, carga, iluminación', 'Agua potable solar', 'Escalable: 5-500kW'],
+    useCases: ['Pueblos sin red eléctrica', 'Escuelas rurales', 'Centros de salud', 'Proyectos humanitarios'],
+    glowColor: "rgba(139, 92, 246, 0.15)",
+    iconBg: "rgba(124, 58, 237, 0.15)"
+  },
+  {
+    icon: <Battery size={16} color="#f9a8d4" />,
+    title: "BIS Smart Energy Vault",
+    badge: "Nuevo",
+    badgeBgColor: "rgba(236, 72, 153, 0.2)",
+    badgeTextColor: "#fbcfe8",
+    description: "Almacenamiento energético All-in-One para industrias con optimización de consumo",
+    characteristics: ['Baterías última generación', 'IA para optimización', 'Carga en horarios económicos', 'Integra con Solar Guardian'],
+    useCases: ['Industrias de alto consumo', 'Centros logísticos', 'Supermercados', 'Infraestructura crítica 24/7'],
+    glowColor: "rgba(236, 72, 153, 0.15)",
+    iconBg: "rgba(217, 70, 239, 0.15)"
+  }
+];
+
+// Ecosystem solutions for the improved visualization
+const ECOSYSTEM_SOLUTIONS = [
+  { 
+    id: "ecoparques", 
+    name: "EcoParques",
+    category: "Urbano",
+    icon: <TreePine size={12} />,
+    colorClass: "bg-purple-500"
+  },
+  { 
+    id: "energyvault", 
+    name: "Energy Vault",
+    category: "Industrial",
+    icon: <Battery size={12} />,
+    colorClass: "bg-pink-500"
+  },
+  { 
+    id: "riegosolar", 
+    name: "Riego Solar",
+    category: "Agrícola",
+    icon: <Droplets size={12} />,
+    colorClass: "bg-blue-500"
+  },
+  { 
+    id: "microhub", 
+    name: "MicroHUB",
+    category: "Comunitario",
+    icon: <Zap size={12} />,
+    colorClass: "bg-yellow-500"
+  },
+  { 
+    id: "smartbuilding", 
+    name: "Smart Building",
+    category: "Corporativo",
+    icon: <Building size={12} />,
+    colorClass: "bg-green-500"
+  },
+  { 
+    id: "industria", 
+    name: "Industria 4.0",
+    category: "Manufactura",
+    icon: <Factory size={12} />,
+    colorClass: "bg-cyan-500"
+  },
+  { 
+    id: "healthcare", 
+    name: "Healthcare",
+    category: "Salud",
+    icon: <Hospital size={12} />,
+    colorClass: "bg-red-500"
+  },
+  { 
+    id: "construccion", 
+    name: "Construcción Sustentable",
+    category: "Infraestructura",
+    icon: <Construction size={12} />,
+    colorClass: "bg-amber-500"
+  }
+];
 
 // Constantes para ajustar fácilmente el layout
 const LAYOUT = {
@@ -14,7 +102,7 @@ const LAYOUT = {
   accentColor: '#8B5CF6', // Púrpura
   
   // Factor de reducción de altura
-  heightReduction: 0.95, // 80% de la altura original (20% de reducción)
+  heightReduction: 0.95, // 95% de la altura original (5% de reducción)
 };
 
 const BISVerticales = () => {
@@ -141,8 +229,7 @@ const BISVerticales = () => {
             lineHeight: 1.4,
             margin: 0,
           }}>
-            Soluciones All-in-One para diversas aplicaciones más allá de los parques solares tradicionales.
-            Integramos tecnología y sustentabilidad para cada sector.
+            Soluciones modulares que integran generación solar avanzada, infraestructura sostenible y mecanismos de financiamiento innovadores.
           </p>
         </div>
 
@@ -153,303 +240,163 @@ const BISVerticales = () => {
           flex: 1,
           marginBottom: '12px', // Reducido de 15px
         }}>
-          {/* Tarjeta 1: EcoParques Urbanos */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9))',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            borderRadius: '10px',
-            padding: '12px', // Reducido de 15px
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-            backdropFilter: 'blur(4px)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            {/* Elemento decorativo */}
-            <div style={{
-              position: 'absolute',
-              top: '-20px',
-              right: '-20px',
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0) 70%)',
-              zIndex: 0,
-            }}></div>
-            
-            <div style={{
-              position: 'relative',
-              zIndex: 2
-            }}>
+          {/* Mapping through the VERTICALS_DATA to generate cards */}
+          {VERTICALS_DATA.map((vertical, index) => (
+            <div 
+              key={index}
+              style={{
+                background: 'linear-gradient(145deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9))',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
+                borderRadius: '10px',
+                padding: '12px', // Reducido de 15px
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                backdropFilter: 'blur(4px)',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Elemento decorativo */}
               <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                marginBottom: '10px'
-              }}>
-                <div style={{
-                  marginRight: '12px',
-                  backgroundColor: 'rgba(124, 58, 237, 0.15)',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <TreePine size={16} color="#c4b5fd" />
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 2px 0',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    EcoParques Urbanos
-                    <span style={{
-                      marginLeft: '8px',
-                      fontSize: '10px',
-                      backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                      color: '#ddd6fe',
-                      padding: '2px 6px',
-                      borderRadius: '12px',
-                    }}>Plazas Sostenibles</span>
-                  </h3>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#D1D5DB',
-                    margin: 0,
-                    lineHeight: 1.3,
-                  }}>
-                    Mini y nano parques solares (100kW y 50kW) para infraestructura pública 100% renovable
-                  </p>
-                </div>
-              </div>
+                position: 'absolute',
+                top: '-20px',
+                right: '-20px',
+                width: '100px',
+                height: '100px',
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${vertical.glowColor} 0%, rgba(139, 92, 246, 0) 70%)`,
+                zIndex: 0,
+              }}></div>
               
-              {/* Área de características y usos - comprimida */}
               <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '8px', // Reducido de 10px
+                position: 'relative',
+                zIndex: 2
               }}>
                 <div style={{
-                  background: 'rgba(31, 41, 55, 0.5)',
-                  borderRadius: '8px',
-                  padding: '8px', // Reducido de 10px
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  marginBottom: '10px'
                 }}>
-                  <h4 style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 4px 0',
-                  }}>Características</h4>
-                  <ul style={{
-                    margin: 0,
-                    padding: 0,
-                    listStyleType: 'none'
+                  <div style={{
+                    marginRight: '12px',
+                    backgroundColor: vertical.iconBg,
+                    padding: '8px',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
                   }}>
-                    {['MicroHUBs autosuficientes', 'WiFi, carga, iluminación', 'Agua potable solar', 'Escalable: 5-500kW'].map((item, i) => (
-                      <li key={i} style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        marginBottom: '3px',
+                    {vertical.icon}
+                  </div>
+                  <div>
+                    <h3 style={{
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      color: '#E5E7EB',
+                      margin: '0 0 2px 0',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}>
+                      {vertical.title}
+                      <span style={{
+                        marginLeft: '8px',
                         fontSize: '10px',
-                        color: '#c4b5fd',
-                      }}>
-                        <span style={{ marginRight: '5px', color: '#c4b5fd' }}>•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                        backgroundColor: vertical.badgeBgColor,
+                        color: vertical.badgeTextColor,
+                        padding: '2px 6px',
+                        borderRadius: '12px',
+                      }}>{vertical.badge}</span>
+                    </h3>
+                    <p style={{
+                      fontSize: '12px',
+                      color: '#D1D5DB',
+                      margin: 0,
+                      lineHeight: 1.3,
+                    }}>
+                      {vertical.description}
+                    </p>
+                  </div>
                 </div>
                 
+                {/* Área de características y usos - comprimida */}
                 <div style={{
-                  background: 'rgba(31, 41, 55, 0.5)',
-                  borderRadius: '8px',
-                  padding: '8px', // Reducido de 10px
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '8px', // Reducido de 10px
                 }}>
-                  <h4 style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 4px 0',
-                  }}>Casos de uso</h4>
-                  <ul style={{
-                    margin: 0,
-                    padding: 0,
-                    listStyleType: 'none'
+                  <div style={{
+                    background: 'rgba(31, 41, 55, 0.5)',
+                    borderRadius: '8px',
+                    padding: '8px', // Reducido de 10px
                   }}>
-                    {['Pueblos sin red eléctrica', 'Escuelas rurales', 'Centros de salud', 'Proyectos humanitarios'].map((item, i) => (
-                      <li key={i} style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        marginBottom: '3px',
-                        fontSize: '10px',
-                        color: '#c4b5fd',
-                      }}>
-                        <span style={{ marginRight: '5px', color: '#f472b6' }}>•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                    <h4 style={{
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: '#E5E7EB',
+                      margin: '0 0 4px 0',
+                    }}>Características</h4>
+                    <ul style={{
+                      margin: 0,
+                      padding: 0,
+                      listStyleType: 'none'
+                    }}>
+                      {vertical.characteristics.map((item, i) => (
+                        <li key={i} style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          marginBottom: '3px',
+                          fontSize: '10px',
+                          color: '#c4b5fd',
+                        }}>
+                          <span style={{ marginRight: '5px', color: '#c4b5fd' }}>•</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <div style={{
+                    background: 'rgba(31, 41, 55, 0.5)',
+                    borderRadius: '8px',
+                    padding: '8px', // Reducido de 10px
+                  }}>
+                    <h4 style={{
+                      fontSize: '11px',
+                      fontWeight: 'bold',
+                      color: '#E5E7EB',
+                      margin: '0 0 4px 0',
+                    }}>Casos de uso</h4>
+                    <ul style={{
+                      margin: 0,
+                      padding: 0,
+                      listStyleType: 'none'
+                    }}>
+                      {vertical.useCases.map((item, i) => (
+                        <li key={i} style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          marginBottom: '3px',
+                          fontSize: '10px',
+                          color: '#c4b5fd',
+                        }}>
+                          <span style={{ marginRight: '5px', color: '#f472b6' }}>•</span>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          {/* Tarjeta 2: BIS Smart Energy Vault */}
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9))',
-            border: '1px solid rgba(139, 92, 246, 0.2)',
-            borderRadius: '10px',
-            padding: '12px', // Reducido de 15px
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-            backdropFilter: 'blur(4px)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            {/* Elemento decorativo */}
-            <div style={{
-              position: 'absolute',
-              top: '-20px',
-              right: '-20px',
-              width: '100px',
-              height: '100px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, rgba(236, 72, 153, 0) 70%)',
-              zIndex: 0,
-            }}></div>
-            
-            <div style={{
-              position: 'relative',
-              zIndex: 2
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                marginBottom: '10px'
-              }}>
-                <div style={{
-                  marginRight: '12px',
-                  backgroundColor: 'rgba(217, 70, 239, 0.15)',
-                  padding: '8px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <Battery size={16} color="#f9a8d4" />
-                </div>
-                <div>
-                  <h3 style={{
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 2px 0',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    BIS Smart Energy Vault
-                    <span style={{
-                      marginLeft: '8px',
-                      fontSize: '10px',
-                      backgroundColor: 'rgba(236, 72, 153, 0.2)',
-                      color: '#fbcfe8',
-                      padding: '2px 6px',
-                      borderRadius: '12px',
-                    }}>Nuevo</span>
-                  </h3>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#D1D5DB',
-                    margin: 0,
-                    lineHeight: 1.3,
-                  }}>
-                    Almacenamiento energético All-in-One para industrias con optimización de consumo
-                  </p>
-                </div>
-              </div>
-              
-              {/* Área de características y usos - comprimida */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '8px', // Reducido de 10px
-              }}>
-                <div style={{
-                  background: 'rgba(31, 41, 55, 0.5)',
-                  borderRadius: '8px',
-                  padding: '8px', // Reducido de 10px
-                }}>
-                  <h4 style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 4px 0',
-                  }}>Características</h4>
-                  <ul style={{
-                    margin: 0,
-                    padding: 0,
-                    listStyleType: 'none'
-                  }}>
-                    {['Baterías última generación', 'IA para optimización', 'Carga en horarios económicos', 'Integra con Solar Guardian'].map((item, i) => (
-                      <li key={i} style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        marginBottom: '3px',
-                        fontSize: '10px',
-                        color: '#c4b5fd',
-                      }}>
-                        <span style={{ marginRight: '5px', color: '#c4b5fd' }}>•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div style={{
-                  background: 'rgba(31, 41, 55, 0.5)',
-                  borderRadius: '8px',
-                  padding: '8px', // Reducido de 10px
-                }}>
-                  <h4 style={{
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: '#E5E7EB',
-                    margin: '0 0 4px 0',
-                  }}>Casos de uso</h4>
-                  <ul style={{
-                    margin: 0,
-                    padding: 0,
-                    listStyleType: 'none'
-                  }}>
-                    {['Industrias de alto consumo', 'Centros logísticos', 'Supermercados', 'Infraestructura crítica 24/7'].map((item, i) => (
-                      <li key={i} style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        marginBottom: '3px',
-                        fontSize: '10px',
-                        color: '#c4b5fd',
-                      }}>
-                        <span style={{ marginRight: '5px', color: '#f472b6' }}>•</span>
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
         
-        {/* Bottom section - ecosistema mejorado con visualización moderna */}
+        {/* IMPROVED ECOSYSTEM VISUALIZATION - Modern solution list with icon grid */}
         <div style={{
           background: 'rgba(17, 24, 39, 0.5)',
           borderRadius: '10px',
           padding: '10px',
-          marginTop: 'auto',
+          marginTop: '1px',
           border: '1px solid rgba(139, 92, 246, 0.2)',
           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
           backdropFilter: 'blur(4px)',
@@ -457,72 +404,134 @@ const BISVerticales = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            marginBottom: '8px',
+            marginBottom: '6px',
           }}>
-            <Signal size={16} color="#c4b5fd" style={{ marginRight: '8px' }} />
-            <h3 style={{
-              fontSize: '14px',
-              fontWeight: 'bold',
-              color: '#E5E7EB',
-              margin: 0,
-            }}>
-              Ecosistema integrado de soluciones
-            </h3>
+           
+            
           </div>
           
           <div style={{
-            background: 'rgba(31, 41, 55, 0.5)',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            height: '80px', // Reducido de 100px
+            display: 'flex',
+            height: '80px',
             position: 'relative',
           }}>
-            {/* Diagrama SVG mejorado y reducido */}
-            <svg viewBox="0 0 800 120" width="100%" height="100%" style={{ position: 'relative', zIndex: 2 }}>
-              {/* Círculo central con efecto */}
-              <defs>
-                <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                  <stop offset="0%" stopColor="rgba(139, 92, 246, 0.6)" />
-                  <stop offset="100%" stopColor="rgba(139, 92, 246, 0.1)" />
-                </radialGradient>
-              </defs>
-              
-              <circle cx="400" cy="60" r="28" fill="url(#centerGlow)" />
-              <circle cx="400" cy="60" r="25" fill="rgba(31, 41, 55, 0.8)" stroke="rgba(139, 92, 246, 0.6)" strokeWidth="1" />
-              <text x="400" y="57" fontSize="10" fill="white" textAnchor="middle" fontWeight="bold">BIS Core</text>
-              <text x="400" y="68" fontSize="7" fill="#d8b4fe" textAnchor="middle">Plataforma Central</text>
-              
-              {/* Líneas de conexión */}
-              <path d="M150,60 C250,60 350,60 370,60" stroke="rgba(167, 139, 250, 0.6)" strokeWidth="1" strokeDasharray="3,2" />
-              <path d="M430,60 C450,60 550,60 650,60" stroke="rgba(167, 139, 250, 0.6)" strokeWidth="1" strokeDasharray="3,2" />
-              <path d="M400,30 L400,15" stroke="rgba(167, 139, 250, 0.6)" strokeWidth="1" strokeDasharray="3,2" />
-              <path d="M400,90 L400,105" stroke="rgba(167, 139, 250, 0.6)" strokeWidth="1" strokeDasharray="3,2" />
-              
-              {/* Nodos secundarios */}
-              <circle cx="150" cy="60" r="16" fill="rgba(139, 92, 246, 0.15)" />
-              <circle cx="150" cy="60" r="14" fill="rgba(31, 41, 55, 0.7)" stroke="rgba(139, 92, 246, 0.4)" strokeWidth="1" />
-              <text x="150" y="63" fontSize="9" fill="#c4b5fd" textAnchor="middle">EcoParques</text>
-              
-              <circle cx="650" cy="60" r="16" fill="rgba(139, 92, 246, 0.15)" />
-              <circle cx="650" cy="60" r="14" fill="rgba(31, 41, 55, 0.7)" stroke="rgba(139, 92, 246, 0.4)" strokeWidth="1" />
-              <text x="650" y="63" fontSize="9" fill="#c4b5fd" textAnchor="middle">Riego Solar</text>
-              
-              <circle cx="400" cy="15" r="16" fill="rgba(139, 92, 246, 0.15)" />
-              <circle cx="400" cy="15" r="14" fill="rgba(31, 41, 55, 0.7)" stroke="rgba(139, 92, 246, 0.4)" strokeWidth="1" />
-              <text x="400" y="18" fontSize="9" fill="#c4b5fd" textAnchor="middle">MicroHUB</text>
-              
-              <circle cx="400" cy="105" r="16" fill="rgba(216, 180, 254, 0.15)" />
-              <circle cx="400" cy="105" r="14" fill="rgba(31, 41, 55, 0.7)" stroke="rgba(216, 180, 254, 0.5)" strokeWidth="1" />
-              <text x="400" y="108" fontSize="9" fill="#f9a8d4" textAnchor="middle">Energy Vault</text>
-            </svg>
-            
-            {/* Efecto de fondo con gradiente radial */}
+            {/* Left side: Core Platform */}
             <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(circle at center, rgba(139, 92, 246, 0.1) 0%, rgba(31, 41, 55, 0) 70%)',
-              zIndex: 1,
-            }}></div>
+              width: '20%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
+            }}>
+           
+              <div style={{
+                width: '100px',
+                height: '90px',
+                borderRadius: '10px',
+                background: 'linear-gradient(145deg, rgba(31, 41, 55, 0.8), rgba(17, 24, 39, 0.9))',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                boxShadow: '0 4px 20px rgba(139, 92, 246, 0.2)',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  backgroundImage: 'radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%)',
+                  filter: 'blur(10px)',
+                  opacity: 0.7,
+                }}/>
+                <PanelTop size={40} color="#c4b5fd" style={{ marginBottom: '5px' }} />
+                <p style={{
+                  margin: 0,
+                  fontSize: '10px',
+                  fontWeight: 'bold',
+                  color: '#e9d5ff',
+                }}>BIS Core</p>
+               
+              </div>
+              
+              {/* Connecting line */}
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                right: '0',
+                width: '30px',
+                height: '1px',
+                background: 'linear-gradient(to right, rgba(139, 92, 246, 0.7), rgba(139, 92, 246, 0.1))',
+              }}/>
+            </div>
+            
+            {/* Right side: Solutions Grid */}
+            <div style={{
+              width: '75%',
+              padding: '0 10px',
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gridTemplateRows: 'repeat(2, 1fr)',
+                gap: '6px',
+                height: '100%',
+              }}>
+                {/* Map through the ecosystem solutions */}
+                {ECOSYSTEM_SOLUTIONS.map((solution, index) => (
+                  <div 
+                    key={solution.id}
+                    style={{
+                      background: 'rgba(31, 41, 55, 0.5)',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(139, 92, 246, 0.1)',
+                      padding: '5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div style={{
+                      width: '18px',
+                      height: '18px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'rgba(31, 41, 55, 0.7)',
+                      marginRight: '6px',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}>
+                      <div className={solution.colorClass} style={{
+                        position: 'absolute',
+                        left: '0',
+                        bottom: '0',
+                        width: '100%',
+                        height: '5px',
+                      }}/>
+                      {solution.icon}
+                    </div>
+                    <div>
+                      <p style={{
+                        margin: 0,
+                        fontSize: '9px',
+                        fontWeight: 'bold',
+                        color: '#e5e7eb',
+                        lineHeight: '1',
+                      }}>{solution.name}</p>
+                      <p style={{
+                        margin: 0,
+                        fontSize: '7px',
+                        color: '#9ca3af',
+                        lineHeight: '1.2',
+                      }}>{solution.category}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
